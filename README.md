@@ -1,1 +1,1 @@
-# university-timetable
+# university-schedule
