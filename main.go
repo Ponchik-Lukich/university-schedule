@@ -8,28 +8,41 @@ import (
 	"time"
 )
 
+var websites = []string{
+	"https://time.is/",
+	"https://home.potatohd.ru/departments/2266/exams",
+}
+
 func main() {
-	url := "https://time.is/"
-	var prevContent [16]byte
-
-	for {
-		content, err := calculateHash(url)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		if prevContent != content {
-			fmt.Println("Website content has changed!")
-		}
-
-		if prevContent == content {
-			fmt.Println("Nothing has changed!")
-		}
-
-		prevContent = content
-		time.Sleep(time.Second * 5)
+	// create [16]byte prevContent array for each website
+	prevContent := make([][16]byte, len(websites))
+	for i := 0; i < len(websites); i++ {
+		prevContent = append(prevContent, [16]byte{})
 	}
+
+	// check each website in a loop parallel
+	for i, url := range websites {
+		go func(i int, url string) {
+			for {
+				content, err := calculateHash(url)
+				if err != nil {
+					println(err)
+					continue
+				}
+
+				if prevContent[i] != content {
+					fmt.Printf("Website %s changed!\n", url)
+				} else {
+					fmt.Printf("Nothing on %s\n", url)
+				}
+
+				prevContent[i] = content
+				time.Sleep(time.Minute)
+			}
+		}(i, url)
+	}
+	//time.Sleep(time.Minute)
+	select {}
 }
 
 func calculateHash(url string) ([16]byte, error) {
