@@ -46,7 +46,7 @@ var classes = []string{
 var wg sync.WaitGroup
 
 func main() {
-	parseByXpath("https://home.mephi.ru/study_groups/14213/schedule")
+	parseByXpath("https://home.mephi.ru/departments/2603786")
 	//for i, url := range websites {
 	//	wg.Add(1)
 	//	go func(i int, url string) {

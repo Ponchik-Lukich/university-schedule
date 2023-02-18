@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"github.com/antchfx/htmlquery"
+	"github.com/antchfx/xpath"
+	"golang.org/x/net/html"
 	"net/http"
+	"strings"
 )
 
 type Department struct {
@@ -28,34 +31,75 @@ type Lesson struct {
 	RoomID string            `json:"room_id"`
 }
 
+func zip(a, b []string) []string {
+	var result []string
+	for i := 0; i < len(a) && i < len(b); i++ {
+		result = append(result, a[i]+" "+b[i])
+	}
+	return result
+}
+
 func parseByXpath(url string) {
+	newTerms := make(map[string]string)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		// handle error
 	}
 	defer resp.Body.Close()
 
-	// Parse HTML document
-	//doc, err := htmlquery.Parse(resp.Body)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-
-	//var days []string
-	//// Find the element using XPath
-	//for i := 1; i < 6; i++ {
-	//	day, err := htmlquery.Query(doc, "//*[@id=\"page-content-wrapper\"]/div/h3["+strconv.Itoa(i)+"]")
-	//	if err != nil {
-	//		continue
-	//	} else {
-	//		dayText := strings.TrimSpace(htmlquery.InnerText(day))
-	//		if dayText != "" {
-	//			days = append(days, dayText)
-	//		}
-	//	}
-	//}
-
-	for _, day := range days {
-		fmt.Println(day)
+	doc, err := html.Parse(resp.Body)
+	if err != nil {
+		// handle error
 	}
+
+	root := htmlquery.CreateXPathNavigator(doc)
+
+	path := "/html/body/div[1]/div/div/div[3]/h1/text()"
+
+	expr := xpath.MustCompile(path)
+
+	departmentName := expr.Evaluate(root).(*xpath.NodeIterator)
+	departmentName.MoveNext()
+	node := departmentName.Current()
+	dep := node.Value()
+	dep = strings.ReplaceAll(dep, "\n", "")
+	dep = strings.TrimSpace(dep)
+	newTerms["departmentName"] = dep
+	//newTerms["days"] = make(map[string]string)
+
+	path = "/html/body/div[1]/div/div/div[contains(@class,'list-group')]"
+
+	expr = xpath.MustCompile(path)
+
+	days := expr.Evaluate(root).(*xpath.NodeIterator)
+
+	path = "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']/text()"
+
+	expr = xpath.MustCompile(path)
+
+	dayNames := expr.Evaluate(root).(*xpath.NodeIterator)
+
+	var daysSlice, dayNamesSlice []string
+	for days.MoveNext() {
+		node := days.Current()
+		day := node.Value()
+		fmt.Println(day)
+		daysSlice = append(daysSlice, node)
+	}
+	for dayNames.MoveNext() {
+		node := dayNames.Current()
+		dayName := node.Value()
+		dayName = strings.ReplaceAll(dayName, "\n", "")
+		dayName = strings.TrimSpace(dayName)
+		dayNamesSlice = append(dayNamesSlice, node.Value())
+	}
+
+	zipped := zip(daysSlice, dayNamesSlice)
+
+	// iterate over the zipped result
+	for _, pair := range zipped {
+		fmt.Println(pair)
+	}
+
+	// Iterate over the selected nodes
 }
