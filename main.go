@@ -37,23 +37,18 @@ var weekDays = []string{
 }
 
 var classes = []string{
+	"text-nowrap",
 	"lesson-square lesson-square-0",
 	"lesson-square lesson-square-1",
 	"lesson-square lesson-square-2",
-	"lesson lesson-practice",
-	"lesson lesson-lecture",
-	"lesson lesson-lab",
-	"text-nowrap",
 }
 
 type schedule struct {
-	Name        string
-	Url         string
-	Hash        string
-	Xpath       string
+	Name  string
+	Url   string
+	Hash  string
+	Xpath string
 }
-
-
 
 var wg sync.WaitGroup
 
@@ -67,7 +62,7 @@ func main() {
 			data, _ := getWebsiteData(url)
 			doc, _ := goquery.NewDocumentFromReader(strings.NewReader(data))
 			body := doc.Find("*").First()
-			removeJunk(body)
+			removeJunk(body, 1)
 			if prevXpath[i] != "" {
 				body = getXpathData(body, prevXpath[i])
 			}
@@ -96,7 +91,7 @@ func parseData(data string) (string, error) {
 	data = re.ReplaceAllString(data, "\n")
 	lines := strings.Split(data, "\n")
 	var index int
-	out:
+out:
 	for i, line := range lines {
 		for _, day := range weekDays {
 			if strings.HasPrefix(line, day) {
@@ -106,7 +101,7 @@ func parseData(data string) (string, error) {
 		}
 	}
 	lines = lines[index:]
-	lines = lines[:len(lines) - 3]
+	lines = lines[:len(lines)-3]
 	data = strings.Join(lines, "\n")
 	fmt.Println(data)
 	return data, nil
@@ -154,10 +149,10 @@ func getWebsiteData(url string) (string, error) {
 	return string(body), nil
 }
 
-func removeJunk(data *goquery.Selection) {
+func removeJunk(data *goquery.Selection, choice int) {
 	class, _ := data.Attr("class")
 	for _, c := range classes {
-		if class == c {
+		if class == c || choice == 1 {
 			if class == "text-nowrap" {
 				link := data.Find("a[href*='/tutors/']")
 				if link.Length() > 0 {
@@ -168,24 +163,16 @@ func removeJunk(data *goquery.Selection) {
 						return
 					}
 				}
-				link = data.Find("a[href*='/study_groups/']")
-				if link.Length() > 0 {
-					linkText := link.AttrOr("href", "")
-					splitLink := strings.Split(linkText, "/study_groups/")
-					if len(splitLink) > 1 {
-						subLink := strings.Split(splitLink[1], "/schedule")
-						if len(subLink) > 0 {
-							data.SetText(subLink[0])
-							return
-						}
+			} else if choice == 1 {
+				if class == "lesson lesson-practice" || class == "lesson lesson-lecture" || class == "lesson lesson-lab" {
+					dataID, exists := data.Attr("data-id")
+					if exists {
+						data.SetText(dataID)
+						return
 					}
 				}
 			} else {
-				if class == "lesson lesson-practice" || class == "lesson lesson-lecture" || class == "lesson lesson-lab"{
-					setText(data, class)
-				} else {
-					data.SetText(class)
-				}
+				data.SetText(class)
 				return
 			}
 		}
@@ -198,7 +185,7 @@ func removeJunk(data *goquery.Selection) {
 		} else if s.Is("style") {
 			s.Remove()
 		} else {
-			removeJunk(s)
+			removeJunk(s, choice)
 		}
 	})
 }
