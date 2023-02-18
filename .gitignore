@@ -2,3 +2,5 @@
 ydb/.idea
 ydb/venv
 ydb/authorized_key.json
+ydb/sources
+ydb/.env

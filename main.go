@@ -154,17 +154,6 @@ func getWebsiteData(url string) (string, error) {
 	return string(body), nil
 }
 
-func setText(data *goquery.Selection, text string) {
-	if data.Length() > 0 {
-		content := data.Contents().Text()
-		if len(content) > 0 {
-			data.SetHtml(content + text)
-		} else {
-			data.SetText(text)
-		}
-	}
-}
-
 func removeJunk(data *goquery.Selection) {
 	class, _ := data.Attr("class")
 	for _, c := range classes {
@@ -179,11 +168,24 @@ func removeJunk(data *goquery.Selection) {
 						return
 					}
 				}
-			} else {
-				if len(classes) > 0 {
-					data.SetAttr("data-id", class)
+				link = data.Find("a[href*='/study_groups/']")
+				if link.Length() > 0 {
+					linkText := link.AttrOr("href", "")
+					splitLink := strings.Split(linkText, "/study_groups/")
+					if len(splitLink) > 1 {
+						subLink := strings.Split(splitLink[1], "/schedule")
+						if len(subLink) > 0 {
+							data.SetText(subLink[0])
+							return
+						}
+					}
 				}
-				data.setText(data, class)
+			} else {
+				if class == "lesson lesson-practice" || class == "lesson lesson-lecture" || class == "lesson lesson-lab"{
+					setText(data, class)
+				} else {
+					data.SetText(class)
+				}
 				return
 			}
 		}
@@ -201,6 +203,16 @@ func removeJunk(data *goquery.Selection) {
 	})
 }
 
+func setText(data *goquery.Selection, text string) {
+	if data.Length() > 0 {
+		content := data.Contents().Text()
+		if len(content) > 0 {
+			data.SetHtml(content + text)
+		} else {
+			data.SetText(text)
+		}
+	}
+}
 
 func getXpathData(body *goquery.Selection, xpath string) *goquery.Selection {
 	xpath = strings.ReplaceAll(xpath, "/html/body", "")
