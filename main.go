@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
@@ -9,13 +8,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 var websites = []string{
-	"https://time.is/",
+	"https://home.mephi.ru/departments/111056",
 }
 
 var prevContent = []string{
@@ -24,6 +24,30 @@ var prevContent = []string{
 
 var prevXpath = []string{
 	"",
+}
+
+var weekDays = []string{
+	"Понедельник",
+	"Вторник",
+	"Среда",
+	"Четверг",
+	"Пятница",
+	"Суббота",
+	"Воскресенье",
+}
+
+var classes = []string{
+	"lesson-square lesson-square-0",
+	"lesson-square lesson-square-1",
+	"lesson-square lesson-square-2",
+	"text-nowrap",
+}
+
+type schedule struct {
+	Name        string
+	Url         string
+	Hash        string
+	Xpath       string
 }
 
 var wg sync.WaitGroup
@@ -43,49 +67,45 @@ func main() {
 				body = getXpathData(body, prevXpath[i])
 			}
 			data = body.Text()
+			// remove all extra spaces
+			data, _ = parseData(data)
 			hash, _ := getWebsiteHash(data)
 			if hash != prevContent[i] {
 				prevContent[i] = hash
 				result = true
 			}
 
-			//content, err := calculateHash(url)
-			//fmt.Println(content)
-			//if err != nil {
-			//	println(err)
-			//	return
-			//}
-			//
-			fmt.Println(hash)
 			if result {
 				fmt.Printf("Website %s changed!\n", url)
 			} else {
 				fmt.Printf("Nothing on %s\n", url)
 			}
-			//
-			//prevContent[i] = content
+
 		}(i, url)
 	}
 	wg.Wait()
 }
 
-func calculateHash(url string) ([16]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return [16]byte{}, err
+func parseData(data string) (string, error) {
+	re := regexp.MustCompile(`\n\n+`)
+	data = re.ReplaceAllString(data, "\n")
+	lines := strings.Split(data, "\n")
+	var index int
+	out:
+	for i, line := range lines {
+		for _, day := range weekDays {
+			if strings.HasPrefix(line, day) {
+				index = i
+				break out
+			}
+		}
 	}
+	lines = lines[index:]
+	lines = lines[:len(lines) - 3]
+	data = strings.Join(lines, "\n")
+	fmt.Println(data)
+	return data, nil
 
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return [16]byte{}, err
-	}
-	fmt.Println(resp.Body)
-
-	hash := md5.Sum(body)
-
-	return hash, nil
 }
 
 func getWebsiteHash(data string) (string, error) {
@@ -130,10 +150,26 @@ func getWebsiteData(url string) (string, error) {
 }
 
 func removeJunk(data *goquery.Selection) {
-	// get attributes
-	//println(data.Attr("class"))
+	class, _ := data.Attr("class")
+	for _, c := range classes {
+		if class == c {
+			if class == "text-nowrap" {
+				link := data.Find("a[href*='/tutors/']")
+				if link.Length() > 0 {
+					linkText := link.AttrOr("href", "")
+					splitLink := strings.Split(linkText, "/tutors/")
+					if len(splitLink) > 1 {
+						data.SetText(splitLink[1])
+						return
+					}
+				}
+			} else {
+				data.SetText(class)
+				return
+			}
+		}
+	}
 	data = data.RemoveAttr("class")
-	//println(data.Attr("class"))
 	data = data.RemoveAttr("id")
 	data.Contents().Each(func(i int, s *goquery.Selection) {
 		if s.Is("script") {
@@ -145,10 +181,8 @@ func removeJunk(data *goquery.Selection) {
 		}
 	})
 }
+
 func getXpathData(body *goquery.Selection, xpath string) *goquery.Selection {
-	// get only body
-	// remove classes and ids, keep only text recursively
-	// remove /html/body from xpath
 	xpath = strings.ReplaceAll(xpath, "/html/body", "")
 
 	return body.Find(xpath)
