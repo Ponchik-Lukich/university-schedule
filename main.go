@@ -43,47 +43,40 @@ var classes = []string{
 	"lesson-square lesson-square-2",
 }
 
-type schedule struct {
-	Name  string
-	Url   string
-	Hash  string
-	Xpath string
-}
-
 var wg sync.WaitGroup
 
 func main() {
-
-	for i, url := range websites {
-		wg.Add(1)
-		go func(i int, url string) {
-			defer wg.Done()
-			result := false
-			data, _ := getWebsiteData(url)
-			doc, _ := goquery.NewDocumentFromReader(strings.NewReader(data))
-			body := doc.Find("*").First()
-			removeJunk(body, 1)
-			if prevXpath[i] != "" {
-				body = getXpathData(body, prevXpath[i])
-			}
-			data = body.Text()
-			// remove all extra spaces
-			data, _ = parseData(data)
-			hash, _ := getWebsiteHash(data)
-			if hash != prevContent[i] {
-				prevContent[i] = hash
-				result = true
-			}
-
-			if result {
-				fmt.Printf("Website %s changed!\n", url)
-			} else {
-				fmt.Printf("Nothing on %s\n", url)
-			}
-
-		}(i, url)
-	}
-	wg.Wait()
+	parseByXpath("https://home.mephi.ru/study_groups/14213/schedule")
+	//for i, url := range websites {
+	//	wg.Add(1)
+	//	go func(i int, url string) {
+	//		defer wg.Done()
+	//		result := false
+	//		data, _ := getWebsiteData(url)
+	//		doc, _ := goquery.NewDocumentFromReader(strings.NewReader(data))
+	//		body := doc.Find("*").First()
+	//		removeJunk(body, 1)
+	//		if prevXpath[i] != "" {
+	//			body = getXpathData(body, prevXpath[i])
+	//		}
+	//		data = body.Text()
+	//		// remove all extra spaces
+	//		data, _ = parseData(data)
+	//		hash, _ := getWebsiteHash(data)
+	//		if hash != prevContent[i] {
+	//			prevContent[i] = hash
+	//			result = true
+	//		}
+	//
+	//		if result {
+	//			fmt.Printf("Website %s changed!\n", url)
+	//		} else {
+	//			fmt.Printf("Nothing on %s\n", url)
+	//		}
+	//
+	//	}(i, url)
+	//}
+	//wg.Wait()
 }
 
 func parseData(data string) (string, error) {
