@@ -40,6 +40,9 @@ var classes = []string{
 	"lesson-square lesson-square-0",
 	"lesson-square lesson-square-1",
 	"lesson-square lesson-square-2",
+	"lesson lesson-practice",
+	"lesson lesson-lecture",
+	"lesson lesson-lab",
 	"text-nowrap",
 }
 
@@ -49,6 +52,8 @@ type schedule struct {
 	Hash        string
 	Xpath       string
 }
+
+
 
 var wg sync.WaitGroup
 
@@ -149,6 +154,17 @@ func getWebsiteData(url string) (string, error) {
 	return string(body), nil
 }
 
+func setText(data *goquery.Selection, text string) {
+	if data.Length() > 0 {
+		content := data.Contents().Text()
+		if len(content) > 0 {
+			data.SetHtml(content + text)
+		} else {
+			data.SetText(text)
+		}
+	}
+}
+
 func removeJunk(data *goquery.Selection) {
 	class, _ := data.Attr("class")
 	for _, c := range classes {
@@ -164,7 +180,10 @@ func removeJunk(data *goquery.Selection) {
 					}
 				}
 			} else {
-				data.SetText(class)
+				if len(classes) > 0 {
+					data.SetAttr("data-id", class)
+				}
+				data.setText(data, class)
 				return
 			}
 		}
@@ -181,6 +200,7 @@ func removeJunk(data *goquery.Selection) {
 		}
 	})
 }
+
 
 func getXpathData(body *goquery.Selection, xpath string) *goquery.Selection {
 	xpath = strings.ReplaceAll(xpath, "/html/body", "")
