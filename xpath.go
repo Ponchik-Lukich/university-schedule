@@ -83,7 +83,23 @@ func parseByXpath(url string) {
 					lessonRoomId = ""
 					fmt.Println(lessonRoom, lessonRoomId)
 				}
+				lessonWeekNode := htmlquery.FindOne(lesson, "./span[contains(@class, 'lesson-square')]")
+				lessonWeek := htmlquery.SelectAttr(lessonWeekNode, "class")
+				lessonWeek = strings.ReplaceAll(lessonWeek, "lesson-square lesson-square-", "")
 
+				fmt.Println(lessonWeek)
+				lessonTypeNode := htmlquery.FindOne(lesson, "./div[contains(@class, 'label-lesson')]/text()")
+				lessonType := ""
+				if lessonTypeNode != nil {
+					lessonType = strings.TrimSpace(lessonTypeNode.Data)
+					fmt.Println(lessonType)
+				}
+				lessonNameNode := htmlquery.FindOne(lesson, "./text()")
+				lessonName := ""
+				if lessonNameNode != nil {
+					lessonName = strings.TrimSpace(lessonNameNode.Data)
+					fmt.Println(lessonName)
+				}
 			}
 		}
 	}
