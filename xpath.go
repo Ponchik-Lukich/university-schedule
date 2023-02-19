@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
 	"net/http"
@@ -14,14 +16,16 @@ type DayData struct {
 }
 
 type LessonData struct {
-	Time   string            `json:"time"`
-	Type   string            `json:"type"`
-	Week   string            `json:"week"`
-	Name   string            `json:"name"`
-	Tutors map[string]string `json:"tutors"`
-	Groups map[string]string `json:"groups"`
-	Room   string            `json:"room"`
-	RoomID string            `json:"room_id"`
+	Time     string            `json:"time"`
+	Type     string            `json:"type"`
+	Week     string            `json:"week"`
+	Name     string            `json:"name"`
+	Tutors   map[string]string `json:"tutors"`
+	Groups   map[string]string `json:"groups"`
+	Room     string            `json:"room"`
+	RoomID   string            `json:"room_id"`
+	Dates    string            `json:"dates"`
+	Addition string            `json:"additional_ifo"`
 }
 
 func parseByXpath(url string) {
@@ -42,6 +46,7 @@ func parseByXpath(url string) {
 	departmentName := strings.TrimSpace(departmentNameNode.FirstChild.Data)
 	newTerms[departmentId] = make(map[string]interface{})
 	newTerms[departmentId]["days"] = make(map[string]interface{})
+	//newTerms[departmentId][departmentName] = departmentName
 	newTerms[departmentId][departmentId] = departmentName
 
 	days := htmlquery.Find(doc, "/html/body/div[1]/div/div/div[contains(@class,'list-group')]")
@@ -99,6 +104,7 @@ func parseByXpath(url string) {
 				re := regexp.MustCompile(`\s+`)
 				lessonName = re.ReplaceAllString(lessonName, " ")
 				lessonName = strings.TrimRight(lessonName, " ,")
+
 				//fmt.Println(lessonName)
 
 				// get groups
@@ -141,23 +147,29 @@ func parseByXpath(url string) {
 				}
 				// new lessonsData
 				lessonData := LessonData{
-					Time:   lessonTime,
-					Type:   lessonType,
-					Week:   lessonWeek,
-					Name:   lessonName,
-					Tutors: tutorsData,
-					Groups: groupsData,
-					Room:   lessonRoom,
-					RoomID: lessonRoomId,
+					Time:     lessonTime,
+					Type:     lessonType,
+					Week:     lessonWeek,
+					Name:     lessonName,
+					Tutors:   tutorsData,
+					Groups:   groupsData,
+					Room:     lessonRoom,
+					RoomID:   lessonRoomId,
+					Dates:    lessonDates,
+					Addition: additionalInfo,
 				}
 				dayData[lessonID] = lessonData
 			}
 			newTerms[departmentId]["days"].(map[string]interface{})[dayName] = dayData
 		}
 	}
-	// print all data beautifully
-	//
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
+	//put data to json file
+	jsonData, err := json.MarshalIndent(newTerms, "", " ")
+	if err != nil {
+		fmt.Println(err)
+	}
+	println(string(jsonData))
 
 }

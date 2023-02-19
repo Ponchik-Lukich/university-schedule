@@ -15,7 +15,7 @@ import (
 )
 
 var websites = []string{
-	"https://home.mephi.ru/departments/111056",
+	"https://home.potatohd.ru/departments/2603786",
 }
 
 var prevContent = []string{
@@ -55,7 +55,7 @@ func main() {
 	//		data, _ := getWebsiteData(url)
 	//		doc, _ := goquery.NewDocumentFromReader(strings.NewReader(data))
 	//		body := doc.Find("*").First()
-	//		removeJunk(body, 1)
+	//		removeJunk(body, 0)
 	//		if prevXpath[i] != "" {
 	//			body = getXpathData(body, prevXpath[i])
 	//		}
