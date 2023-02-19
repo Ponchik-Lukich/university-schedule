@@ -31,14 +31,6 @@ type Lesson struct {
 	RoomID string            `json:"room_id"`
 }
 
-func zip(a, b []string) []string {
-	var result []string
-	for i := 0; i < len(a) && i < len(b); i++ {
-		result = append(result, a[i]+" "+b[i])
-	}
-	return result
-}
-
 func parseByXpath(url string) {
 	newTerms := make(map[string]string)
 	resp, err := http.Get(url)
@@ -53,53 +45,54 @@ func parseByXpath(url string) {
 	}
 
 	root := htmlquery.CreateXPathNavigator(doc)
-
 	path := "/html/body/div[1]/div/div/div[3]/h1/text()"
-
 	expr := xpath.MustCompile(path)
 
-	departmentName := expr.Evaluate(root).(*xpath.NodeIterator)
-	departmentName.MoveNext()
-	node := departmentName.Current()
-	dep := node.Value()
-	dep = strings.ReplaceAll(dep, "\n", "")
-	dep = strings.TrimSpace(dep)
-	newTerms["departmentName"] = dep
+	departmentNameRes := expr.Evaluate(root).(*xpath.NodeIterator)
+	departmentNameRes.MoveNext()
+	node := departmentNameRes.Current()
+	departmentName := node.Value()
+	departmentName = strings.ReplaceAll(departmentName, "\n", "")
+	departmentName = strings.TrimSpace(departmentName)
+	newTerms["departmentName"] = departmentName
 	//newTerms["days"] = make(map[string]string)
 
 	path = "/html/body/div[1]/div/div/div[contains(@class,'list-group')]"
-
 	expr = xpath.MustCompile(path)
-
 	days := expr.Evaluate(root).(*xpath.NodeIterator)
-
 	path = "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']/text()"
-
 	expr = xpath.MustCompile(path)
 
 	dayNames := expr.Evaluate(root).(*xpath.NodeIterator)
 
-	var daysSlice, dayNamesSlice []string
 	for days.MoveNext() {
-		node := days.Current()
-		day := node.Value()
-		fmt.Println(day)
-		daysSlice = append(daysSlice, node)
-	}
-	for dayNames.MoveNext() {
-		node := dayNames.Current()
-		dayName := node.Value()
-		dayName = strings.ReplaceAll(dayName, "\n", "")
-		dayName = strings.TrimSpace(dayName)
-		dayNamesSlice = append(dayNamesSlice, node.Value())
+
+		path = "./div[@class = 'list-group-item']"
+		expr = xpath.MustCompile(path)
+		lessonsGroupItem := expr.Evaluate(days.Current()).(*xpath.NodeIterator)
+
+		//dayData := make(map[string]string)
+
+		for lessonsGroupItem.MoveNext() {
+
+			path = "./div[@class = 'lesson-time']/text()"
+			expr = xpath.MustCompile(path)
+			lessonTimeRes := expr.Evaluate(lessonsGroupItem.Current()).(*xpath.NodeIterator)
+			node := lessonTimeRes.Current()
+			lessonTime := node.Value()
+			lessonTime = strings.ReplaceAll(lessonTime, "\n", "")
+			lessonTime = strings.TrimSpace(lessonTime)
+			lessonTime = strings.ReplaceAll(lessonTime, "—", "-")
+			fmt.Println("HERE1", lessonTimeRes.Current().Value())
+			path = "./div[@class = 'lesson-lessons']/div"
+			expr = xpath.MustCompile(path)
+			lessonsRes := expr.Evaluate(lessonsGroupItem.Current()).(*xpath.NodeIterator)
+
+		}
+		if dayNames.MoveNext() {
+			fmt.Println(dayNames.Current().Value())
+		}
+
 	}
 
-	zipped := zip(daysSlice, dayNamesSlice)
-
-	// iterate over the zipped result
-	for _, pair := range zipped {
-		fmt.Println(pair)
-	}
-
-	// Iterate over the selected nodes
 }
