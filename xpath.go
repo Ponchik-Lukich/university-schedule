@@ -94,12 +94,32 @@ func parseByXpath(url string) {
 					lessonType = strings.TrimSpace(lessonTypeNode.Data)
 					fmt.Println(lessonType)
 				}
-				lessonNameNode := htmlquery.FindOne(lesson, "./text()")
-				lessonName := ""
-				if lessonNameNode != nil {
-					lessonName = strings.TrimSpace(lessonNameNode.Data)
-					fmt.Println(lessonName)
+				// get lesson name
+
+				// get groups
+				groups := htmlquery.Find(lesson, "./a")
+				groupsData := make(map[string]string)
+				for _, group := range groups {
+					groupName := strings.TrimSpace(group.FirstChild.Data)
+					groupId := htmlquery.SelectAttr(group, "href")
+					groupId = strings.ReplaceAll(groupId, "/study_groups/", "")
+					groupId = strings.ReplaceAll(groupId, "/schedule", "")
+					groupsData[groupId] = groupName
+					fmt.Println(groupName, groupId)
 				}
+
+				tutors := htmlquery.Find(lesson, "./span/a")
+				tutorsData := make(map[string]string)
+				for _, tutor := range tutors {
+					tutorName := strings.TrimSpace(tutor.FirstChild.Data)
+					tutorId := htmlquery.SelectAttr(tutor, "href")
+					tutorId = strings.ReplaceAll(tutorId, "/tutors/", "")
+					tutorsData[tutorId] = tutorName
+					fmt.Println(tutorName, tutorId)
+				}
+
+				lessonDates := htmlquery.Find(lesson, "./span[@class = 'lesson-dates']/text()")
+
 			}
 		}
 	}
