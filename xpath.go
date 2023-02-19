@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -91,10 +91,15 @@ func parseByXpath(url string) {
 					lessonType = strings.TrimSpace(lessonTypeNode.Data)
 					//fmt.Println(lessonType)
 				}
-				// get lesson name with path ./text()
-				//lessonNameNode := htmlquery.FindOne(lesson, "./text()")
-				//fmt.Println(lessonNameNode.Data)
-				// text of lesson name is in div with class ''
+				lessonNameNode := htmlquery.Find(lesson, "./text()")
+				lessonName := ""
+				for _, node := range lessonNameNode {
+					lessonName += strings.TrimSpace(node.Data)
+				}
+				re := regexp.MustCompile(`\s+`)
+				lessonName = re.ReplaceAllString(lessonName, " ")
+				lessonName = strings.TrimRight(lessonName, " ,")
+				//fmt.Println(lessonName)
 
 				// get groups
 				groups := htmlquery.Find(lesson, "./a")
@@ -139,7 +144,7 @@ func parseByXpath(url string) {
 					Time:   lessonTime,
 					Type:   lessonType,
 					Week:   lessonWeek,
-					Name:   "",
+					Name:   lessonName,
 					Tutors: tutorsData,
 					Groups: groupsData,
 					Room:   lessonRoom,
@@ -152,7 +157,7 @@ func parseByXpath(url string) {
 	}
 	// print all data beautifully
 	//
-	fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
+	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
 
 }
