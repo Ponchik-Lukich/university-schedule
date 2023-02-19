@@ -1,24 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
 	"net/http"
 	"strings"
 )
 
-type Department struct {
-	Name string          `json:"name"`
-	Days map[string]*Day `json:"days"`
+type DayData struct {
+	Name string
+	Data map[string]LessonData
 }
 
-type Day struct {
-	Name    string    `json:"name"`
-	Lessons []*Lesson `json:"lessons"`
-}
-
-type Lesson struct {
+type LessonData struct {
 	ID     string            `json:"id"`
 	Time   string            `json:"time"`
 	Type   string            `json:"type"`
@@ -31,7 +25,7 @@ type Lesson struct {
 }
 
 func parseByXpath(url string) {
-	newTerms := make(map[string]string)
+	newTerms := make(map[string]map[string]interface{})
 	resp, err := http.Get(url)
 	if err != nil {
 		// handle error
@@ -43,32 +37,35 @@ func parseByXpath(url string) {
 		// handle error
 	}
 
+	departmentId := strings.ReplaceAll(url, "https://home.potatohd.ru/departments/", "")
 	departmentNameNode := htmlquery.FindOne(doc, "/html/body/div[1]/div/div/div[3]/h1")
 	departmentName := strings.TrimSpace(departmentNameNode.FirstChild.Data)
-	newTerms["departmentName"] = departmentName
+	newTerms[departmentId] = make(map[string]interface{})
+	newTerms[departmentId]["days"] = make(map[string]interface{})
+	newTerms[departmentId][departmentId] = departmentName
 
 	days := htmlquery.Find(doc, "/html/body/div[1]/div/div/div[contains(@class,'list-group')]")
 	dayNames := htmlquery.Find(doc, "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']")
 
 	for i, day := range days {
-		if i < len(dayNames) {
-			dayName := strings.TrimSpace(dayNames[i].FirstChild.Data)
-			fmt.Println(dayName)
-		}
+		dayData := make(map[string]LessonData)
+		dayName := strings.TrimSpace(dayNames[i].FirstChild.Data)
+		//fmt.Println(dayName)
 		lessonsGroupItem := htmlquery.Find(day, "./div[@class = 'list-group-item']")
 
 		for _, lessonGroupItem := range lessonsGroupItem {
+
 			lessonTimeNode := htmlquery.FindOne(lessonGroupItem, "./div[@class = 'lesson-time']")
 			lessonTime := strings.TrimSpace(lessonTimeNode.FirstChild.Data)
 			lessonTime = strings.ReplaceAll(lessonTime, "—", "-")
-			fmt.Println(lessonTime)
+			//fmt.Println(lessonTime)
 
 			lessons := htmlquery.Find(lessonGroupItem, "./div[@class = 'lesson-lessons']/div")
 			// Process lessons
 			for _, lesson := range lessons {
 				// print 'data-id' attribute
 				lessonID := htmlquery.SelectAttr(lesson, "data-id")
-				fmt.Println(lessonID)
+				//fmt.Println(lessonID)
 				lessonRoomNode := htmlquery.FindOne(lesson, "./div/a/text()")
 				lessonRoom := ""
 				lessonRoomId := ""
@@ -76,25 +73,28 @@ func parseByXpath(url string) {
 					lessonRoom = strings.TrimSpace(lessonRoomNode.Data)
 					lessonRoomId = htmlquery.SelectAttr(lessonRoomNode.Parent, "href")
 					lessonRoomId = strings.ReplaceAll(lessonRoomId, "/rooms/", "")
-					fmt.Println(lessonRoom, lessonRoomId)
+					//fmt.Println(lessonRoom, lessonRoomId)
 				} else {
 					lessonRoomNode = htmlquery.FindOne(lesson, "./div/span/text()")
 					lessonRoom = strings.TrimSpace(lessonRoomNode.Data)
 					lessonRoomId = ""
-					fmt.Println(lessonRoom, lessonRoomId)
+					//fmt.Println(lessonRoom, lessonRoomId)
 				}
 				lessonWeekNode := htmlquery.FindOne(lesson, "./span[contains(@class, 'lesson-square')]")
 				lessonWeek := htmlquery.SelectAttr(lessonWeekNode, "class")
 				lessonWeek = strings.ReplaceAll(lessonWeek, "lesson-square lesson-square-", "")
 
-				fmt.Println(lessonWeek)
+				//fmt.Println(lessonWeek)
 				lessonTypeNode := htmlquery.FindOne(lesson, "./div[contains(@class, 'label-lesson')]/text()")
 				lessonType := ""
 				if lessonTypeNode != nil {
 					lessonType = strings.TrimSpace(lessonTypeNode.Data)
-					fmt.Println(lessonType)
+					//fmt.Println(lessonType)
 				}
-				// get lesson name
+				// get lesson name with path ./text()
+				//lessonNameNode := htmlquery.FindOne(lesson, "./text()")
+				//fmt.Println(lessonNameNode.Data)
+				// text of lesson name is in div with class ''
 
 				// get groups
 				groups := htmlquery.Find(lesson, "./a")
@@ -105,7 +105,7 @@ func parseByXpath(url string) {
 					groupId = strings.ReplaceAll(groupId, "/study_groups/", "")
 					groupId = strings.ReplaceAll(groupId, "/schedule", "")
 					groupsData[groupId] = groupName
-					fmt.Println(groupName, groupId)
+					//fmt.Println(groupName, groupId)
 				}
 
 				tutors := htmlquery.Find(lesson, "./span/a")
@@ -115,12 +115,44 @@ func parseByXpath(url string) {
 					tutorId := htmlquery.SelectAttr(tutor, "href")
 					tutorId = strings.ReplaceAll(tutorId, "/tutors/", "")
 					tutorsData[tutorId] = tutorName
-					fmt.Println(tutorName, tutorId)
+					//fmt.Println(tutorName, tutorId)
 				}
 
-				lessonDates := htmlquery.Find(lesson, "./span[@class = 'lesson-dates']/text()")
-
+				// get lesson dates
+				lessonDatesNode := htmlquery.FindOne(lesson, "./span[@class = 'lesson-dates']/text()")
+				lessonDates := ""
+				if lessonDatesNode != nil {
+					lessonDates = strings.TrimSpace(lessonDatesNode.Data)
+					lessonDates = strings.ReplaceAll(lessonDates, "—", "-")
+					//fmt.Println(lessonDates)
+				}
+				additionalInfoNode := htmlquery.Find(lesson, "./span[@class = 'text-muted']/text()")
+				additionalInfo := ""
+				if len(additionalInfoNode) > 0 {
+					for _, info := range additionalInfoNode {
+						additionalInfo += strings.TrimSpace(info.Data)
+					}
+					//fmt.Println(additionalInfo)
+				}
+				// new lessonsData
+				lessonData := LessonData{
+					ID:     lessonID,
+					Time:   lessonTime,
+					Type:   lessonType,
+					Week:   lessonWeek,
+					Name:   "",
+					Tutors: tutorsData,
+					Groups: groupsData,
+					Room:   lessonRoom,
+					RoomID: lessonRoomId,
+				}
+				dayData[lessonID] = lessonData
 			}
+			newTerms[departmentId]["days"].(map[string]interface{})[dayName] = dayData
 		}
 	}
+	// print all data beautifully
+	//
+	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
+
 }
