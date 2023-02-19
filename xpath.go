@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
 	"net/http"
@@ -13,7 +14,6 @@ type DayData struct {
 }
 
 type LessonData struct {
-	ID     string            `json:"id"`
 	Time   string            `json:"time"`
 	Type   string            `json:"type"`
 	Week   string            `json:"week"`
@@ -136,7 +136,6 @@ func parseByXpath(url string) {
 				}
 				// new lessonsData
 				lessonData := LessonData{
-					ID:     lessonID,
 					Time:   lessonTime,
 					Type:   lessonType,
 					Week:   lessonWeek,
@@ -153,6 +152,7 @@ func parseByXpath(url string) {
 	}
 	// print all data beautifully
 	//
+	fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
 
 }
