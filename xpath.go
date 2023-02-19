@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/antchfx/htmlquery"
-	"github.com/antchfx/xpath"
 	"golang.org/x/net/html"
 	"net/http"
 	"strings"
@@ -44,55 +43,48 @@ func parseByXpath(url string) {
 		// handle error
 	}
 
-	root := htmlquery.CreateXPathNavigator(doc)
-	path := "/html/body/div[1]/div/div/div[3]/h1/text()"
-	expr := xpath.MustCompile(path)
-
-	departmentNameRes := expr.Evaluate(root).(*xpath.NodeIterator)
-	departmentNameRes.MoveNext()
-	node := departmentNameRes.Current()
-	departmentName := node.Value()
-	departmentName = strings.ReplaceAll(departmentName, "\n", "")
-	departmentName = strings.TrimSpace(departmentName)
+	departmentNameNode := htmlquery.FindOne(doc, "/html/body/div[1]/div/div/div[3]/h1")
+	departmentName := strings.TrimSpace(departmentNameNode.FirstChild.Data)
 	newTerms["departmentName"] = departmentName
-	//newTerms["days"] = make(map[string]string)
 
-	path = "/html/body/div[1]/div/div/div[contains(@class,'list-group')]"
-	expr = xpath.MustCompile(path)
-	days := expr.Evaluate(root).(*xpath.NodeIterator)
-	path = "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']/text()"
-	expr = xpath.MustCompile(path)
+	days := htmlquery.Find(doc, "/html/body/div[1]/div/div/div[contains(@class,'list-group')]")
+	dayNames := htmlquery.Find(doc, "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']")
 
-	dayNames := expr.Evaluate(root).(*xpath.NodeIterator)
+	for i, day := range days {
+		if i < len(dayNames) {
+			dayName := strings.TrimSpace(dayNames[i].FirstChild.Data)
+			fmt.Println(dayName)
+		}
+		lessonsGroupItem := htmlquery.Find(day, "./div[@class = 'list-group-item']")
 
-	for days.MoveNext() {
-
-		path = "./div[@class = 'list-group-item']"
-		expr = xpath.MustCompile(path)
-		lessonsGroupItem := expr.Evaluate(days.Current()).(*xpath.NodeIterator)
-
-		//dayData := make(map[string]string)
-
-		for lessonsGroupItem.MoveNext() {
-
-			path = "./div[@class = 'lesson-time']/text()"
-			expr = xpath.MustCompile(path)
-			lessonTimeRes := expr.Evaluate(lessonsGroupItem.Current()).(*xpath.NodeIterator)
-			node := lessonTimeRes.Current()
-			lessonTime := node.Value()
-			lessonTime = strings.ReplaceAll(lessonTime, "\n", "")
-			lessonTime = strings.TrimSpace(lessonTime)
+		for _, lessonGroupItem := range lessonsGroupItem {
+			lessonTimeNode := htmlquery.FindOne(lessonGroupItem, "./div[@class = 'lesson-time']")
+			lessonTime := strings.TrimSpace(lessonTimeNode.FirstChild.Data)
 			lessonTime = strings.ReplaceAll(lessonTime, "—", "-")
-			fmt.Println("HERE1", lessonTimeRes.Current().Value())
-			path = "./div[@class = 'lesson-lessons']/div"
-			expr = xpath.MustCompile(path)
-			lessonsRes := expr.Evaluate(lessonsGroupItem.Current()).(*xpath.NodeIterator)
+			fmt.Println(lessonTime)
 
-		}
-		if dayNames.MoveNext() {
-			fmt.Println(dayNames.Current().Value())
-		}
+			lessons := htmlquery.Find(lessonGroupItem, "./div[@class = 'lesson-lessons']/div")
+			// Process lessons
+			for _, lesson := range lessons {
+				// print 'data-id' attribute
+				lessonID := htmlquery.SelectAttr(lesson, "data-id")
+				fmt.Println(lessonID)
+				lessonRoomNode := htmlquery.FindOne(lesson, "./div/a/text()")
+				lessonRoom := ""
+				lessonRoomId := ""
+				if lessonRoomNode != nil {
+					lessonRoom = strings.TrimSpace(lessonRoomNode.Data)
+					lessonRoomId = htmlquery.SelectAttr(lessonRoomNode.Parent, "href")
+					lessonRoomId = strings.ReplaceAll(lessonRoomId, "/rooms/", "")
+					fmt.Println(lessonRoom, lessonRoomId)
+				} else {
+					lessonRoomNode = htmlquery.FindOne(lesson, "./div/span/text()")
+					lessonRoom = strings.TrimSpace(lessonRoomNode.Data)
+					lessonRoomId = ""
+					fmt.Println(lessonRoom, lessonRoomId)
+				}
 
+			}
+		}
 	}
-
 }
