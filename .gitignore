@@ -1,4 +1,5 @@
 .idea
+.env
 ydb/.idea
 ydb/venv
 ydb/authorized_key.json
