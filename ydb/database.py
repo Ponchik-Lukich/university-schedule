@@ -82,12 +82,7 @@ def parse_departments_names(session):
 
 def parse_department_links(session):
     result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
-        """
-        SELECT 
-        id, 
-        name
-        FROM departments;
-        """.format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
+        "SELECT * FROM departments;".format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
         commit_tx=True,
     )
     for row in result_sets[0].rows:
