@@ -29,12 +29,26 @@ func init() {
 	}
 }
 
+//func createTableExample(ctx context.Context, db ydb.Connection, cfg Config) {
+//	err := db.Table().Do(ctx,
+//		func(ctx context.Context, s table.Session) (err error) {
+//			return s.CreateTable(ctx, cfg.Database+"/series",
+//				options.WithColumn("series_id", types.TypeUint64), // not null column
+//				options.WithColumn("title", types.Optional(types.TypeUTF8)),
+//				options.WithColumn("release_date", types.Optional(types.TypeDate)),
+//				options.WithPrimaryKeyColumn("series_id"),
+//			)
+//		},
+//	)
+//	if err != nil {
+//		panic(err)
+//	}
+//}
+
 func connect() {
 	var cfg Config
 	cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
 	cfg.Database, _ = os.LookupEnv("DATABASE")
-	fmt.Println(cfg.Endpoint)
-	fmt.Println(cfg.Database)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	db, err := ydb.Open(ctx,

@@ -16,7 +16,8 @@ type DayData struct {
 }
 
 type LessonData struct {
-	Time     string            `json:"time"`
+	TimeFrom string            `json:"time_from"`
+	TimeTo   string            `json:"time_to"`
 	Type     string            `json:"type"`
 	Week     string            `json:"week"`
 	Name     string            `json:"name"`
@@ -24,8 +25,10 @@ type LessonData struct {
 	Groups   map[string]string `json:"groups"`
 	Room     string            `json:"room"`
 	RoomID   string            `json:"room_id"`
+	DateFrom string            `json:"date_from"`
+	DateTo   string            `json:"date_to"`
 	Dates    string            `json:"dates"`
-	Addition string            `json:"additional_ifo"`
+	Addition string            `json:"additional_info"`
 }
 
 func parseByXpath(url string) {
@@ -40,14 +43,16 @@ func parseByXpath(url string) {
 	if err != nil {
 		// handle error
 	}
-
+	semester := htmlquery.FindOne(doc, "//*[@id=\"page-content-wrapper\"]/div/div[3]/ol/li[1]/a")
+	semesterUrl := htmlquery.SelectAttr(semester, "href")
+	semesterId := strings.ReplaceAll(semesterUrl, "/study_groups?organization_id=1&term_id=", "")
 	departmentId := strings.ReplaceAll(url, "https://home.potatohd.ru/departments/", "")
 	departmentNameNode := htmlquery.FindOne(doc, "/html/body/div[1]/div/div/div[3]/h1")
 	departmentName := strings.TrimSpace(departmentNameNode.FirstChild.Data)
-	newTerms[departmentId] = make(map[string]interface{})
-	newTerms[departmentId]["days"] = make(map[string]interface{})
+	newTerms[semesterId] = make(map[string]interface{})
+	newTerms[semesterId]["days"] = make(map[string]interface{})
 	//newTerms[departmentId][departmentName] = departmentName
-	newTerms[departmentId][departmentId] = departmentName
+	newTerms[semesterId][departmentId] = departmentName
 
 	days := htmlquery.Find(doc, "/html/body/div[1]/div/div/div[contains(@class,'list-group')]")
 	dayNames := htmlquery.Find(doc, "/html/body/div[1]/div/div/h3[@class = 'lesson-wday']")
@@ -62,7 +67,13 @@ func parseByXpath(url string) {
 
 			lessonTimeNode := htmlquery.FindOne(lessonGroupItem, "./div[@class = 'lesson-time']")
 			lessonTime := strings.TrimSpace(lessonTimeNode.FirstChild.Data)
+			lessonTime = strings.ReplaceAll(lessonTime, " ", "")
+			lessonTime = strings.ReplaceAll(lessonTime, " ", "")
 			lessonTime = strings.ReplaceAll(lessonTime, "—", "-")
+			// cut before space
+			lessonTimeFrom := strings.Split(lessonTime, "-")[0]
+			// cut after space
+			lessonTimeTo := strings.Split(lessonTime, "-")[1]
 			//fmt.Println(lessonTime)
 
 			lessons := htmlquery.Find(lessonGroupItem, "./div[@class = 'lesson-lessons']/div")
@@ -131,10 +142,18 @@ func parseByXpath(url string) {
 
 				// get lesson dates
 				lessonDatesNode := htmlquery.FindOne(lesson, "./span[@class = 'lesson-dates']/text()")
-				lessonDates := ""
+				lessonDatesFrom := ""
+				lessonDatesTo := ""
 				if lessonDatesNode != nil {
-					lessonDates = strings.TrimSpace(lessonDatesNode.Data)
+					lessonDates := strings.TrimSpace(lessonDatesNode.Data)
+					lessonDates = strings.ReplaceAll(lessonDates, " ", "")
+					lessonDates = strings.ReplaceAll(lessonDates, " ", "")
 					lessonDates = strings.ReplaceAll(lessonDates, "—", "-")
+					lessonDates = strings.ReplaceAll(lessonDates, "(", "")
+					lessonDates = strings.ReplaceAll(lessonDates, ")", "")
+					lessonDates = strings.ReplaceAll(lessonDates, ",", "-")
+					lessonDatesFrom = strings.Split(lessonDates, "-")[0]
+					lessonDatesTo = strings.Split(lessonDates, "-")[1]
 					//fmt.Println(lessonDates)
 				}
 				additionalInfoNode := htmlquery.Find(lesson, "./span[@class = 'text-muted']/text()")
@@ -147,7 +166,8 @@ func parseByXpath(url string) {
 				}
 				// new lessonsData
 				lessonData := LessonData{
-					Time:     lessonTime,
+					TimeFrom: lessonTimeFrom,
+					TimeTo:   lessonTimeTo,
 					Type:     lessonType,
 					Week:     lessonWeek,
 					Name:     lessonName,
@@ -155,12 +175,13 @@ func parseByXpath(url string) {
 					Groups:   groupsData,
 					Room:     lessonRoom,
 					RoomID:   lessonRoomId,
-					Dates:    lessonDates,
+					DateFrom: lessonDatesFrom,
+					DateTo:   lessonDatesTo,
 					Addition: additionalInfo,
 				}
 				dayData[lessonID] = lessonData
 			}
-			newTerms[departmentId]["days"].(map[string]interface{})[dayName] = dayData
+			newTerms[semesterId]["days"].(map[string]interface{})[dayName] = dayData
 		}
 	}
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)

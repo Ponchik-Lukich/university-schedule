@@ -59,6 +59,37 @@ def parse_groups(session):
         count += 1
 
 
+def fill_tutors(session):
+    json_data = open_json('sources/postgres_public_tutors.json')
+    count = 0
+    head = """UPSERT INTO tutors (id, name, short_name, tutor_id) VALUES"""
+    body = ""
+    for tutor in json_data:
+        body += '\t("' + str(uuid.uuid4()) + '", "' + tutor["name"] + '", "' + tutor["short_name"] + '", ' + str(tutor["id"]) + ')'
+        if count != len(json_data) - 1 and count % 73 != 0:
+            body += ',\n'
+        else:
+            query_execute(head, body, session)
+            body = """"""
+        count += 1
+
+
+
+def fill_subjects(session):
+    json_data = open_json('sources/postgres_public_lessons.json')
+    count = 0
+    head = """UPSERT INTO subjects (id, name) VALUES"""
+    body = ""
+    for subject in json_data:
+        body += '\t("' + str(uuid.uuid4()) + '", "' + subject["name"] + '")'
+        if count != len(json_data) - 1 and count % 67 != 0:
+            body += ',\n'
+        else:
+            query_execute(head, body, session)
+            body = """"""
+        count += 1
+
+
 def parse_departments_names(session):
     json_data = open_json('sources/department_timetable.json')
     names = []
@@ -80,6 +111,7 @@ def parse_departments_names(session):
             body = """"""
         count += 1
 
+
 def parse_department_links(session):
     result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
         "SELECT * FROM departments;".format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
@@ -90,14 +122,14 @@ def parse_department_links(session):
     # print(result_sets)
 
 
-
 with ydb.Driver(**driver_config) as driver:
     try:
-        driver.wait(fail_fast=True, timeout=1)
+        driver.wait(fail_fast=True, timeout=10)
         session = driver.table_client.session().create()
         # parse_departments_names(session)
         # parse_groups(session)
-        parse_department_links(session)
+        # parse_department_links(session)
+        fill_subjects(session)
 
         # session.create_table(driver_config['database'] + '/test',
         #                      ydb.TableDescription()
