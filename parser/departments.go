@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"encoding/json"
@@ -31,7 +31,7 @@ type LessonData struct {
 	Addition string            `json:"additional_info"`
 }
 
-func parseByXpath(url string) {
+func ParseByXpath(url string) {
 	newTerms := make(map[string]map[string]interface{})
 	resp, err := http.Get(url)
 	if err != nil {
@@ -70,9 +70,7 @@ func parseByXpath(url string) {
 			lessonTime = strings.ReplaceAll(lessonTime, " ", "")
 			lessonTime = strings.ReplaceAll(lessonTime, " ", "")
 			lessonTime = strings.ReplaceAll(lessonTime, "—", "-")
-			// cut before space
 			lessonTimeFrom := strings.Split(lessonTime, "-")[0]
-			// cut after space
 			lessonTimeTo := strings.Split(lessonTime, "-")[1]
 			//fmt.Println(lessonTime)
 
@@ -175,6 +173,7 @@ func parseByXpath(url string) {
 					Groups:   groupsData,
 					Room:     lessonRoom,
 					RoomID:   lessonRoomId,
+					Dates:    "",
 					DateFrom: lessonDatesFrom,
 					DateTo:   lessonDatesTo,
 					Addition: additionalInfo,
