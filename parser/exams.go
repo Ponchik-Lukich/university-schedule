@@ -143,6 +143,7 @@ func ParseByXpathExam(url string) {
 		re = regexp.MustCompile(`\s+`)
 		lessonName = re.ReplaceAllString(lessonName, " ")
 		lessonName = strings.TrimRight(lessonName, " ,")
+		lessonName = strings.ReplaceAll(lessonName, "Подгруппа", " Подгруппа")
 		//fmt.Println(lessonName)
 		groups := htmlquery.Find(lesson, "./a")
 		groupsData := make(map[string]string)
