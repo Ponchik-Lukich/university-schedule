@@ -97,11 +97,11 @@ with ydb.Driver(**driver_config) as driver:
         # command = "insert into tutors_timetable (id, tutor_id) values"
         # parse_sql(command, 'sources/sql/tutors_timetable.sql', session)
         prepared_query = session.prepare(
-            FillDataQuery.format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")))
+            FillDataQuery.format(driver_config['database']))
         session.transaction(ydb.SerializableReadWrite()).execute(
             prepared_query,
             {
-                "roomsData": get_rooms_data(),
+                "$roomsData": get_rooms_data(),
             },
             commit_tx=True,
         )
