@@ -4,22 +4,15 @@ import os
 import uuid
 from dotenv import load_dotenv
 from ydb.dbapi import OperationalError
+# import classes from data.py
+from data import *
 
 load_dotenv()
 
-
-class Room(object):
-    ___slots__ = ('id', 'name')
-
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
-
-
 def get_rooms_data():
     return [
-        Room(1, "room 1"),
-        Room(1, "room 2"),
+        Entity(3, "room 1"),
+        Entity(4, "room 2"),
     ]
 
 
