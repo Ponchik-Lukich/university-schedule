@@ -5,3 +5,4 @@ ydb/venv
 ydb/authorized_key.json
 ydb/sources
 ydb/.env
+ydb/__pycache__

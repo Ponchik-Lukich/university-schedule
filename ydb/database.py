@@ -1,6 +1,5 @@
 # from yandex.cloud import ydb
 import json
-
 import ydb.iam
 import os
 import uuid
@@ -124,12 +123,13 @@ def parse_department_links(session):
 
 with ydb.Driver(**driver_config) as driver:
     try:
+        print(driver_config)
         driver.wait(fail_fast=True, timeout=10)
         session = driver.table_client.session().create()
         # parse_departments_names(session)
         # parse_groups(session)
         # parse_department_links(session)
-        fill_subjects(session)
+        # fill_subjects(session)
 
         # session.create_table(driver_config['database'] + '/test',
         #                      ydb.TableDescription()
