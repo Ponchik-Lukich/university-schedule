@@ -15,15 +15,21 @@ DECLARE $roomsData AS List<Struct<
     id: Uint64,
     name: Utf8>>;
     
-DECLARE $roomsData AS List<Struct<
+DECLARE $guestsData AS List<Struct<
     id: Uint64,
-    name: Utf8>>;    
+    short_name: Utf8>>;    
     
 REPLACE INTO rooms
 SELECT
     id,
     name,
 FROM AS_TABLE($roomsData);
+
+REPLACE INTO guests
+SELECT
+    id,
+    short_name,
+FROM AS_TABLE($guestsData);
 """
 
 driver_config = {
@@ -88,7 +94,8 @@ with ydb.Driver(**driver_config) as driver:
         session.transaction(ydb.SerializableReadWrite()).execute(
             prepared_query,
             {
-                "$roomsData": get_rooms_data(),
+                "$roomsData": get_guests_data(),
+                "$guestsData": get_guests_data(),
             },
             commit_tx=True,
         )
