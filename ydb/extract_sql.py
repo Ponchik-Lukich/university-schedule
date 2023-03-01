@@ -79,11 +79,85 @@ SELECT
     name,
 FROM AS_TABLE($roomsData);
 
+REPLACE INTO departments
+SELECT
+    id,
+    name,
+FROM AS_TABLE($departmentsData);
+
+REPLACE INTO groups
+SELECT
+    id,
+    name,
+FROM AS_TABLE($groupsData);
+
 REPLACE INTO guests
 SELECT
     id,
     short_name,
 FROM AS_TABLE($guestsData);
+
+REPLACE INTO tutors
+SELECT
+    id,
+    name,
+    short_name,
+FROM AS_TABLE($tutorsData);
+
+REPLACE INTO department_links
+SELECT
+    id,
+    department_id,
+FROM AS_TABLE($departmentLinksData);
+
+REPLACE INTO calendar_plan
+SELECT
+    id,
+    room_id,
+    time_from,
+    time_to,
+    type,
+    week,
+    subject,
+    week_day,
+    date,
+    date_from,
+    date_to,
+    semester,
+FROM AS_TABLE($CalendarPlanData);
+
+REPLACE INTO calendar_plan_department_links
+SELECT
+    calendar_plan_id,
+    department_link_id,
+FROM AS_TABLE($calendarPlanDepartmentLinksData);
+
+REPLACE INTO calendar_plan_groups
+SELECT
+    calendar_plan_id,
+    group_id,
+    choice,
+FROM AS_TABLE($calendarPlanGroupsData);
+
+REPLACE INTO guests_timetable
+SELECT
+    id,
+    guest_id,
+FROM AS_TABLE($guestsTimetableData);
+
+REPLACE INTO tutors_timetable
+SELECT
+    id,
+    tutor_id,
+FROM AS_TABLE($tutorsTimetableData);
+
+REPLACE INTO calendar_plan_tutors_guests
+SELECT
+    id,
+    calendar_plan_id,
+    tutor_id,
+    guest_id,
+FROM AS_TABLE($tutorsTimetableData);
 """
 
 driver_config = {
@@ -149,7 +223,17 @@ with ydb.Driver(**driver_config) as driver:
             prepared_query,
             {
                 "$roomsData": get_rooms_data(),
+                "$departmentsData": get_departments_data(),
+                "$groupsData": get_groups_data(),
                 "$guestsData": get_guests_data(),
+                "$tutorsData": get_tutors_data(),
+                "$departmentLinksData": get_department_links_data(),
+                "$CalendarPlanData": get_calendar_plan_data(),
+                "$calendarPlanDepartmentLinksData": get_calendar_plan_department_links_data(),
+                "$calendarPlanGroupsData": get_calendar_plan_groups_data(),
+                "$guestsTimetableData": get_guests_timetable_data(),
+                "$tutorsTimetableData": get_tutors_timetable_data(),
+                "$calendarPlanTutorsGuestsData": get_calendar_plan_groups_data(),
             },
             commit_tx=True,
         )
