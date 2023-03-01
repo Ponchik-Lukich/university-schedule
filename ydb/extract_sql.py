@@ -56,7 +56,7 @@ DECLARE $calendarPlanDepartmentLinksData AS List<Struct<
     
 DECLARE $calendarPlanGroupsData AS List<Struct<
     calendar_plan_id: Uint64,
-    group_id: Uint64
+    group_id: Uint64,
     choice: Uint64>>;
     
 DECLARE $guestsTimetableData AS List<Struct<
