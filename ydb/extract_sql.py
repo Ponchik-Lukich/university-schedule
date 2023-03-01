@@ -9,17 +9,16 @@ from data import *
 
 load_dotenv()
 
-def get_rooms_data():
-    return [
-        Entity(3, "room 1"),
-        Entity(4, "room 2"),
-    ]
-
 
 FillDataQuery = """PRAGMA TablePathPrefix("{}");
 DECLARE $roomsData AS List<Struct<
     id: Uint64,
     name: Utf8>>;
+    
+DECLARE $roomsData AS List<Struct<
+    id: Uint64,
+    name: Utf8>>;    
+    
 REPLACE INTO rooms
 SELECT
     id,
@@ -84,11 +83,6 @@ with ydb.Driver(**driver_config) as driver:
     try:
         driver.wait(fail_fast=True, timeout=10)
         session = driver.table_client.session().create()
-        # command = "insert into tutors (id, name, short_name) values"
-        # parse_sql(command, 'sources/sql/tutors.sql', session)
-
-        # command = "insert into tutors_timetable (id, tutor_id) values"
-        # parse_sql(command, 'sources/sql/tutors_timetable.sql', session)
         prepared_query = session.prepare(
             FillDataQuery.format(driver_config['database']))
         session.transaction(ydb.SerializableReadWrite()).execute(
@@ -99,8 +93,6 @@ with ydb.Driver(**driver_config) as driver:
             commit_tx=True,
         )
 
-        # command = "insert into tutors_lessons (id, tutor_id) values"
-        # parse_sql(command, 'sources/sql/tutors_timetable.sql', session)
         exit(1)
     except TimeoutError:
         print("Connect failed to YDB")

@@ -1,3 +1,12 @@
+import json
+
+
+def get_json_data(file):
+    with open(file, encoding="Utf8") as f:
+        d = json.load(f)
+        return d
+
+
 class Entity(object):
     ___slots__ = ('id', 'name')
 
@@ -95,3 +104,9 @@ class Calendar_plan_Tutors_Guests(object):
         self.guest_id = guest_id
 
 
+def get_rooms_data():
+    rooms_data = []
+    rooms = get_json_data("./sources/json/rooms.json")
+    for room in rooms:
+        rooms_data.append(Entity(room["id"], room["name"]))
+    return rooms_data
