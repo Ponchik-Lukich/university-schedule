@@ -14,10 +14,64 @@ FillDataQuery = """PRAGMA TablePathPrefix("{}");
 DECLARE $roomsData AS List<Struct<
     id: Uint64,
     name: Utf8>>;
+   
+DECLARE $departmentsData AS List<Struct<
+    id: Uint64,
+    short_name: Utf8>>; 
+    
+DECLARE $groupsData AS List<Struct<
+    id: Uint64,
+    short_name: Utf8>>;
     
 DECLARE $guestsData AS List<Struct<
     id: Uint64,
-    short_name: Utf8>>;    
+    short_name: Utf8>>; 
+    
+DECLARE $tutorsData AS List<Struct<
+    id: Uint64,
+    name: Utf8,
+    short_name: Utf8>>; 
+    
+DECLARE $departmentLinksData AS List<Struct<
+    id: Uint64,
+    department_id: Uint64>>;
+    
+DECLARE $CalendarPlanData AS List<Struct<
+    id: Uint64,
+    room_id: Uint64,
+    time_from: Timestamp,
+    time_to: Timestamp,
+    type: Utf8,
+    week: Uint32,
+    subject: Utf8,
+    week_day: Uint32,
+    date: String,
+    date_from: Date,
+    date_to: Date,
+    semester: Uint32>>;
+    
+DECLARE $calendarPlanDepartmentLinksData AS List<Struct<
+    calendar_plan_id: Uint64,
+    department_link_id: Uint64>>;
+    
+DECLARE $calendarPlanGroupsData AS List<Struct<
+    calendar_plan_id: Uint64,
+    group_id: Uint64
+    choice: Uint64>>;
+    
+DECLARE $guestsTimetableData AS List<Struct<
+    id: Uint64,
+    guest_id: Uint64>>; 
+    
+DECLARE $tutorsTimetableData AS List<Struct<
+    id: Uint64,
+    tutor_id: Uint64>>;
+    
+DECLARE $calendarPlanTutorsGuestsData AS List<Struct<
+    id: Uint64,
+    calendar_plan_id: Uint64,
+    tutor_id: Uint64,
+    guest_id: Uint64>>;
     
 REPLACE INTO rooms
 SELECT
@@ -94,7 +148,7 @@ with ydb.Driver(**driver_config) as driver:
         session.transaction(ydb.SerializableReadWrite()).execute(
             prepared_query,
             {
-                "$roomsData": get_guests_data(),
+                "$roomsData": get_rooms_data(),
                 "$guestsData": get_guests_data(),
             },
             commit_tx=True,
