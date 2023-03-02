@@ -1,16 +1,18 @@
-# from yandex.cloud import ydb
 import json
 import ydb.iam
 import os
 import uuid
 from dotenv import load_dotenv
+from ydb.dbapi import OperationalError
+from query import FillDataQuery, FillDataQuery1, FillDataQuery2
+from data import *
 
 load_dotenv()
+
 
 driver_config = {
     "endpoint": os.getenv('ENDPOINT'),
     "database": os.getenv('DATABASE'),
-    # "credentials": ydb.AnonymousCredentials()
     "credentials": ydb.iam.ServiceAccountCredentials.from_file(
         "./authorized_key.json"
     ),
@@ -18,135 +20,90 @@ driver_config = {
 }
 
 
-def save_json(filename, data):
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-
-def read_json(filename):
-    with open(filename, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def executeScriptsFromFile(filename):
+    # Open and read the file as a single buffer
+    fd = open(filename, 'r', encoding="utf8")
+    sqlFile = fd.read()
+    fd.close()
+    return sqlFile
 
 
 def query_execute(query_head, query_body, session):
     s = query_head + '\n' + query_body + ';'
+    # print(s)
+    # print('\n')
     session.transaction().execute(
         s.format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
         commit_tx=True,
     )
 
 
-def open_json(name):
-    with open(name, encoding="utf8") as json_file:
-        json_data = json.load(json_file)
-        json_file.close()
-        return json_data
+def readScriptsFromFile(filename):
+    sql_data = executeScriptsFromFile(filename)
+    sql_data = sql_data.split('\n')
+    for sql in sql_data:
+        try:
+            print(sql)
+        except OperationalError as msg:
+            print("Command skipped: ", msg)
 
 
-def parse_groups(session):
-    json_data = open_json('sources/groups.json')
-    count = 0
-    head = """UPSERT INTO groups (id, name) VALUES"""
+def parse_sql(head, filename, session):
+    sql_data = executeScriptsFromFile(filename)
+    sql_data = sql_data.split('\n')
+    counter = 0
     body = ""
-    for group in json_data:
-        body += '\t("' + str(uuid.uuid4()) + '", "' + json_data[group] + '")'
-        if count != len(json_data) - 1 and count % 100 != 0:
-            body += ',\n'
+    for sql in sql_data:
+        body += sql
+        if counter != len(sql_data) - 1 and counter % 100 != 0 and counter != 0:
+            body += '\n'
         else:
-            query_execute(head, body, session)
+            query_execute(head, body[:-1], session)
             body = """"""
-        count += 1
-
-
-def fill_tutors(session):
-    json_data = open_json('sources/postgres_public_tutors.json')
-    count = 0
-    head = """UPSERT INTO tutors (id, name, short_name, tutor_id) VALUES"""
-    body = ""
-    for tutor in json_data:
-        body += '\t("' + str(uuid.uuid4()) + '", "' + tutor["name"] + '", "' + tutor["short_name"] + '", ' + str(tutor["id"]) + ')'
-        if count != len(json_data) - 1 and count % 73 != 0:
-            body += ',\n'
-        else:
-            query_execute(head, body, session)
-            body = """"""
-        count += 1
-
-
-
-def fill_subjects(session):
-    json_data = open_json('sources/postgres_public_lessons.json')
-    count = 0
-    head = """UPSERT INTO subjects (id, name) VALUES"""
-    body = ""
-    for subject in json_data:
-        body += '\t("' + str(uuid.uuid4()) + '", "' + subject["name"] + '")'
-        if count != len(json_data) - 1 and count % 67 != 0:
-            body += ',\n'
-        else:
-            query_execute(head, body, session)
-            body = """"""
-        count += 1
-
-
-def parse_departments_names(session):
-    json_data = open_json('sources/department_timetable.json')
-    names = []
-    for semester in json_data:
-        for department in json_data[semester]:
-            names.append(json_data[semester][department]['name'].replace('"', "|"))
-    names = list(set(names))
-
-    count = 0
-    head = """UPSERT INTO departments (id, name) VALUES"""
-    body = ""
-
-    for name in names:
-        body += '\t("' + str(uuid.uuid4()) + '", "' + name + '")'
-        if count != len(names) - 1 and count != len(names) / 2:
-            body += ',\n'
-        else:
-            query_execute(head, body, session)
-            body = """"""
-        count += 1
-
-
-def parse_department_links(session):
-    result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
-        "SELECT * FROM departments;".format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
-        commit_tx=True,
-    )
-    for row in result_sets[0].rows:
-        print("id: ", row.id, ", name: ", row.name)
-    # print(result_sets)
+        counter += 1
 
 
 with ydb.Driver(**driver_config) as driver:
     try:
-        print(driver_config)
         driver.wait(fail_fast=True, timeout=10)
         session = driver.table_client.session().create()
-        # parse_departments_names(session)
-        # parse_groups(session)
-        # parse_department_links(session)
-        # fill_subjects(session)
+        prepared_query = session.prepare(
+            FillDataQuery.format(driver_config['database']))
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {
+                "$roomsData": get_rooms_data(),
+                "$departmentsData": get_departments_data(),
+                "$groupsData": get_groups_data(),
+                "$guestsData": get_guests_data(),
+                "$tutorsData": get_tutors_data(),
+                "$departmentLinksData": get_department_links_data(),
+                "$calendarPlanDepartmentLinksData": get_calendar_plan_department_links_data(),
+                "$calendarPlanGroupsData": get_calendar_plan_groups_data(),
+            },
+            commit_tx=True,
+        )
+        prepared_query1 = session.prepare(
+            FillDataQuery1.format(driver_config['database']))
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query1,
+            {
+                "$CalendarPlanData": get_calendar_plan_data(),
+            },
+            commit_tx=True,
+        )
+        prepared_query2 = session.prepare(
+            FillDataQuery2.format(driver_config['database']))
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query2,
+            {
+                "$guestsTimetableData": get_guests_timetable_data(),
+                "$tutorsTimetableData": get_tutors_timetable_data(),
+                "$calendarPlanTutorsGuestsData": get_calendar_plan_tutors_guests_data(),
+            },
+            commit_tx=True,
+        )
 
-        # session.create_table(driver_config['database'] + '/test',
-        #                      ydb.TableDescription()
-        #                      .with_column(ydb.Column('series_id', ydb.PrimitiveType.Uint64))  # not null column
-        #                      .with_column(ydb.Column('title', ydb.OptionalType(ydb.PrimitiveType.Utf8)))
-        #                      .with_column(ydb.Column('series_info', ydb.OptionalType(ydb.PrimitiveType.Utf8)))
-        #                      .with_column(ydb.Column('release_date', ydb.OptionalType(ydb.PrimitiveType.Uint64)))
-        #                      .with_primary_key('series_id'))
-
-        # parse_departments(session)
-        # session.transaction().execute(
-        #     """
-        #     UPSERT INTO departments (id, name) VALUES
-        #         ("2e010b71-1531-47b7-83a5-875883fda9a7", "Кафедра «Технологии замкнутого ядерного топливного цикла» (89)");
-        #     """.format(ydb.iam.ServiceAccountCredentials.from_file("./authorized_key.json")),
-        #     commit_tx=True,
-        # )
         exit(1)
     except TimeoutError:
         print("Connect failed to YDB")

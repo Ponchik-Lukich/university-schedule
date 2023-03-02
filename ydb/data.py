@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 
 def get_json_data(file):
@@ -42,11 +43,9 @@ class Department_link(object):
 
 class Calendar_plan(object):
     ___slots__ = (
-        'id', 'room_id', 'time_from', 'time_to', 'type', 'week', 'subject', 'week_day', 'date', 'date_from', 'date_to',
-        'semester')
+        'id', 'date', 'date_from', 'date_to', 'room_id', 'semester', 'subject', 'time_from', 'time_to', 'type', 'week', 'week_day')
 
-    def __init__(self, id, room_id, time_from, time_to, type, week, subject, week_day, date, date_from, date_to,
-                 semester):
+    def __init__(self, id, date, date_from, date_to, room_id, semester, subject, time_from, time_to, type, week, week_day):
         self.id = id
         self.room_id = room_id
         self.time_from = time_from
@@ -56,8 +55,14 @@ class Calendar_plan(object):
         self.subject = subject
         self.week_day = week_day
         self.date = date
-        self.date_from = date_from
-        self.date_to = date_to
+        if date_from is not None:
+            self.date_from = bytes(date_from, "utf8")
+        else:
+            self.date_from = date_from
+        if date_to is not None:
+            self.date_to = bytes(date_to, "utf8")
+        else:
+            self.date_to = date_to
         self.semester = semester
 
 
@@ -156,11 +161,15 @@ def get_calendar_plan_data():
     calendar_plan_data = []
     calendar_plans = get_json_data("./sources/json/calendar_plan.json")
     for calendar_plan in calendar_plans:
+        time_from = calendar_plan["time_from"]
+        time_to = calendar_plan["time_to"]
+        int_time_from = int(time_from[:2]) * 60 + int(time_from[3:5])
+        int_time_to = int(time_to[:2]) * 60 + int(time_to[3:5])
         calendar_plan_data.append(
-            Calendar_plan(calendar_plan["id"], calendar_plan["room_id"], calendar_plan["time_from"],
-                          calendar_plan["time_to"], calendar_plan["type"], calendar_plan["week"],
-                          calendar_plan["subject"], calendar_plan["week_day"], calendar_plan["date"],
-                          calendar_plan["date_from"], calendar_plan["date_to"], calendar_plan["semester"]))
+            Calendar_plan(calendar_plan["id"], calendar_plan["date"],
+                          calendar_plan["date_from"], calendar_plan["date_to"], calendar_plan["room_id"], calendar_plan["semester"],
+                          calendar_plan["subject"], int_time_from,
+                          int_time_to, calendar_plan["type"], calendar_plan["week"], calendar_plan["week_day"]))
     return calendar_plan_data
 
 
