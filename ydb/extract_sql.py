@@ -17,11 +17,11 @@ DECLARE $roomsData AS List<Struct<
    
 DECLARE $departmentsData AS List<Struct<
     id: Uint64,
-    short_name: Utf8>>; 
+    name: Utf8>>; 
     
 DECLARE $groupsData AS List<Struct<
     id: Uint64,
-    short_name: Utf8>>;
+    name: Utf8>>;
     
 DECLARE $guestsData AS List<Struct<
     id: Uint64,
@@ -157,7 +157,7 @@ SELECT
     calendar_plan_id,
     tutor_id,
     guest_id,
-FROM AS_TABLE($tutorsTimetableData);
+FROM AS_TABLE($calendarPlanTutorsGuestsData);
 """
 
 driver_config = {
