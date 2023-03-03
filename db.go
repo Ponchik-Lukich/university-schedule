@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type Department struct {
+type DepartmentLink struct {
 	Id uint64
 }
 
@@ -21,6 +21,8 @@ type Config struct {
 	Endpoint string
 	Database string
 }
+
+var Links []string
 
 func init() {
 	if err := godotenv.Load(); err != nil {
@@ -39,7 +41,7 @@ func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error
 		}
 		for res.NextResultSet(ctx) {
 			for res.NextRow() {
-				department := &Department{}
+				department := &DepartmentLink{}
 				err := res.ScanWithDefaults(
 					&department.Id,
 				)
@@ -57,6 +59,10 @@ func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error
 	return departmentLinks, nil
 }
 
+//func getLessonsData(ctx context.Context, db ydb.Connection, departmentLink int) ([]string, error) {
+//
+//}
+
 func connect() {
 	var cfg Config
 	cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
@@ -73,14 +79,14 @@ func connect() {
 		panic(err)
 	}
 
-	departmentLinks, err := getDepartmentLinks(ctx, db)
+	Links, err = getDepartmentLinks(ctx, db)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
-	fmt.Println(len(departmentLinks))
+	fmt.Println(len(Links))
 
-	for _, link := range departmentLinks {
+	for _, link := range Links {
 		fmt.Println(link)
 	}
 

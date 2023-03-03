@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/antchfx/htmlquery"
@@ -190,5 +191,9 @@ func ParseByXpath(url string) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	// hash jsonData
+	hash := sha256.Sum256(jsonData)
+	fmt.Println(hash)
+
 	println(string(jsonData))
 }
