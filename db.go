@@ -31,10 +31,8 @@ func init() {
 func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error) {
 	var departmentLinks []string
 	err := db.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		query := `SELECT DISTINCT cpdl.department_link_id AS id
-                  FROM calendar_plan_department_links cpdl
-                  INNER JOIN calendar_plan cp ON cpdl.calendar_plan_id = cp.id
-                  WHERE semester=16;`
+		query := `SELECT id FROM department_links
+				  WHERE semester=16;`
 		_, res, err := s.Execute(ctx, table.DefaultTxControl(), query, table.NewQueryParameters())
 		if err != nil {
 			return err
@@ -48,7 +46,6 @@ func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error
 				if err != nil {
 					return err
 				}
-				// add department.id to string array
 				departmentLinks = append(departmentLinks, fmt.Sprintf("%d", department.Id))
 			}
 		}
@@ -81,7 +78,8 @@ func connect() {
 		fmt.Println(err)
 		panic(err)
 	}
-	
+	fmt.Println(len(departmentLinks))
+
 	for _, link := range departmentLinks {
 		fmt.Println(link)
 	}

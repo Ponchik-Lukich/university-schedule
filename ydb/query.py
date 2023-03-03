@@ -22,7 +22,8 @@ DECLARE $tutorsData AS List<Struct<
 
 DECLARE $departmentLinksData AS List<Struct<
     id: Uint64,
-    department_id: Uint64>>;
+    department_id: Uint64,
+    semester: Uint32>>;
 
 DECLARE $calendarPlanDepartmentLinksData AS List<Struct<
     calendar_plan_id: Uint64,
@@ -68,6 +69,7 @@ REPLACE INTO department_links
 SELECT
     id,
     department_id,
+    semester,
 FROM AS_TABLE($departmentLinksData);
 
 REPLACE INTO calendar_plan_department_links

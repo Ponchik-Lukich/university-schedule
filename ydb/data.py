@@ -34,11 +34,12 @@ class Tutor(object):
 
 
 class Department_link(object):
-    ___slots__ = ('id', 'department_id')
+    ___slots__ = ('id', 'department_id', 'semester')
 
-    def __init__(self, id, department_id):
+    def __init__(self, id, department_id, semester):
         self.id = id
         self.department_id = department_id
+        self.semester = semester
 
 
 class Calendar_plan(object):
@@ -151,9 +152,10 @@ def get_tutors_data():
 
 def get_department_links_data():
     department_links_data = []
-    department_links = get_json_data("./sources/json/department_links.json")
+    department_links = get_json_data("./sources/json/new_department_links.json")
     for department_link in department_links:
-        department_links_data.append(Department_link(department_link["id"], department_link["department_id"]))
+        department_links_data.append(Department_link(department_link["id"], department_link["department_id"], department_link["semester"]))
+    print(department_links_data)
     return department_links_data
 
 
