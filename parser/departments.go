@@ -28,7 +28,7 @@ type LessonData struct {
 	DateFrom string            `json:"date_from"`
 	DateTo   string            `json:"date_to"`
 	Dates    string            `json:"dates"`
-	Addition string            `json:"additional_info"`
+	//Addition string            `json:"additional_info"`
 }
 
 func ParseByXpath(url string) {
@@ -154,14 +154,14 @@ func ParseByXpath(url string) {
 					lessonDatesTo = strings.Split(lessonDates, "-")[1]
 					//fmt.Println(lessonDates)
 				}
-				additionalInfoNode := htmlquery.Find(lesson, "./span[@class = 'text-muted']/text()")
-				additionalInfo := ""
-				if len(additionalInfoNode) > 0 {
-					for _, info := range additionalInfoNode {
-						additionalInfo += strings.TrimSpace(info.Data)
-					}
-					//fmt.Println(additionalInfo)
-				}
+				//additionalInfoNode := htmlquery.Find(lesson, "./span[@class = 'text-muted']/text()")
+				//additionalInfo := ""
+				//if len(additionalInfoNode) > 0 {
+				//	for _, info := range additionalInfoNode {
+				//		additionalInfo += strings.TrimSpace(info.Data)
+				//	}
+				//	//fmt.Println(additionalInfo)
+				//}
 				// new lessonsData
 				lessonData := LessonData{
 					TimeFrom: lessonTimeFrom,
@@ -176,7 +176,7 @@ func ParseByXpath(url string) {
 					Dates:    "",
 					DateFrom: lessonDatesFrom,
 					DateTo:   lessonDatesTo,
-					Addition: additionalInfo,
+					//Addition: additionalInfo,
 				}
 				dayData[lessonID] = lessonData
 			}
@@ -191,5 +191,4 @@ func ParseByXpath(url string) {
 		fmt.Println(err)
 	}
 	println(string(jsonData))
-
 }

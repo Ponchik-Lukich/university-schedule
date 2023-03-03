@@ -181,7 +181,7 @@ func ParseByXpathExam(url string) {
 			Dates:    lessonDate,
 			DateFrom: "",
 			DateTo:   "",
-			Addition: "",
+			//Addition: "",
 		}
 		// convert counter to string
 		examData[strconv.Itoa(counter)] = lessonData

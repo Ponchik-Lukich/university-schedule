@@ -14,8 +14,7 @@ import (
 )
 
 type Department struct {
-	Id   string
-	Name string
+	Id uint64
 }
 
 type Config struct {
@@ -29,21 +28,37 @@ func init() {
 	}
 }
 
-//func createTableExample(ctx context.Context, db ydb.Connection, cfg Config) {
-//	err := db.Table().Do(ctx,
-//		func(ctx context.Context, s table.Session) (err error) {
-//			return s.CreateTable(ctx, cfg.Database+"/series",
-//				options.WithColumn("series_id", types.TypeUint64), // not null column
-//				options.WithColumn("title", types.Optional(types.TypeUTF8)),
-//				options.WithColumn("release_date", types.Optional(types.TypeDate)),
-//				options.WithPrimaryKeyColumn("series_id"),
-//			)
-//		},
-//	)
-//	if err != nil {
-//		panic(err)
-//	}
-//}
+func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error) {
+	var departmentLinks []string
+	err := db.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
+		query := `SELECT DISTINCT cpdl.department_link_id AS id
+                  FROM calendar_plan_department_links cpdl
+                  INNER JOIN calendar_plan cp ON cpdl.calendar_plan_id = cp.id
+                  WHERE semester=16;`
+		_, res, err := s.Execute(ctx, table.DefaultTxControl(), query, table.NewQueryParameters())
+		if err != nil {
+			return err
+		}
+		for res.NextResultSet(ctx) {
+			for res.NextRow() {
+				department := &Department{}
+				err := res.ScanWithDefaults(
+					&department.Id,
+				)
+				if err != nil {
+					return err
+				}
+				// add department.id to string array
+				departmentLinks = append(departmentLinks, fmt.Sprintf("%d", department.Id))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return departmentLinks, nil
+}
 
 func connect() {
 	var cfg Config
@@ -60,32 +75,17 @@ func connect() {
 		fmt.Println(err)
 		panic(err)
 	}
-	err = db.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		query := `SELECT * FROM departments`
-		_, res, err := s.Execute(ctx, table.DefaultTxControl(), query, table.NewQueryParameters())
-		if err != nil {
-			return err
-		}
-		fmt.Println(res.ResultSetCount())
-		for res.NextResultSet(ctx) {
-			for res.NextRow() {
-				department := &Department{}
-				err := res.ScanWithDefaults(
-					&department.Id,
-					&department.Name,
-				)
-				if err != nil {
-					return err
-				}
-				fmt.Println(*department)
-			}
-		}
-		return nil
-	})
+
+	departmentLinks, err := getDepartmentLinks(ctx, db)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
+	
+	for _, link := range departmentLinks {
+		fmt.Println(link)
+	}
+
 	defer func() {
 		_ = db.Close(ctx)
 	}()
