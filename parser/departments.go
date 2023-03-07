@@ -2,6 +2,7 @@ package parser
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/antchfx/htmlquery"
@@ -34,6 +35,10 @@ type LessonData struct {
 
 func ParseByXpath(url string) {
 	newTerms := make(map[string]map[string]interface{})
+
+	daysHash := make(map[string]string)
+	lessonsHash := make(map[string]string)
+
 	resp, err := http.Get(url)
 	if err != nil {
 		// handle error
@@ -179,21 +184,44 @@ func ParseByXpath(url string) {
 					DateTo:   lessonDatesTo,
 					//Addition: additionalInfo,
 				}
+				// hash lessonData
+				jsonLessonData, err := json.MarshalIndent(lessonData, "", " ")
+				if err != nil {
+					fmt.Println(err)
+				}
+				// hash jsonData
+				hash := sha256.Sum256([]byte(jsonLessonData))
+				hashString := hex.EncodeToString(hash[:])
+				// add to lessonsHash
+				lessonsHash[lessonID] = hashString
 				dayData[lessonID] = lessonData
 			}
 			newTerms[semesterId]["days"].(map[string]interface{})[dayName] = dayData
+			// hash dayData
+			jsondayData, err := json.MarshalIndent(dayData, "", " ")
+			if err != nil {
+				fmt.Println(err)
+			}
+			// hash jsonData
+			hash := sha256.Sum256([]byte(jsondayData))
+			hashString := hex.EncodeToString(hash[:])
+			// add to daysHash
+			daysHash[dayName] = hashString
 		}
 	}
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
 	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
 	//put data to json file
+	// fill daysHash with
 	jsonData, err := json.MarshalIndent(newTerms, "", " ")
 	if err != nil {
 		fmt.Println(err)
 	}
 	// hash jsonData
-	hash := sha256.Sum256(jsonData)
-	fmt.Println(hash)
-
+	hash := sha256.Sum256([]byte(jsonData))
+	hashString := hex.EncodeToString(hash[:])
+	fmt.Println(hashString)
+	//fmt.Println(lessonsHash)
+	//fmt.Println(daysHash)
 	println(string(jsonData))
 }

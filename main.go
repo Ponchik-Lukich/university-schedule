@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"university-timetable/parser"
+	"university-timetable/hash"
 )
 
 var websites = []string{
@@ -49,7 +49,9 @@ var wg sync.WaitGroup
 func main() {
 	//connect()
 
-	parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
+	hash.GetHash()
+
+	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
 	//parser.ParseByXpathExam("https://home.potatohd.ru/departments/111056/exams")
 
 	//for i, url := range websites {
