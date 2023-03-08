@@ -1,1 +1,5 @@
 package hash
+
+func GetExamsHash() {
+
+}

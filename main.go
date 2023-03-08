@@ -49,7 +49,7 @@ var wg sync.WaitGroup
 func main() {
 	//connect()
 	//
-	hash.GetHash()
+	hash.GetDepartmentsHash()
 	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
 	//parser.ParseByXpathExam("https://home.potatohd.ru/departments/111056/exams")
 

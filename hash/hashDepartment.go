@@ -20,7 +20,7 @@ type Time struct {
 	Time string `json:"time"`
 }
 
-func GetHash() {
+func GetDepartmentsHash() {
 	data, err := ioutil.ReadFile("./ydb/sources/parsed/department_timetable.json")
 	newTerms := make(map[string]map[string]interface{})
 	daysHash := make(map[string]string)
