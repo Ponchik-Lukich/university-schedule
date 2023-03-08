@@ -138,6 +138,7 @@ func ParseByXpath(url string) {
 				tutorsData := make(map[string]string)
 				for _, tutor := range tutors {
 					tutorName := strings.TrimSpace(tutor.FirstChild.Data)
+					tutorName = strings.ReplaceAll(tutorName, " ", " ")
 					tutorId := htmlquery.SelectAttr(tutor, "href")
 					tutorId = strings.ReplaceAll(tutorId, "/tutors/", "")
 					tutorsData[tutorId] = tutorName
@@ -146,6 +147,7 @@ func ParseByXpath(url string) {
 
 				// get lesson dates
 				lessonDatesNode := htmlquery.FindOne(lesson, "./span[@class = 'lesson-dates']/text()")
+				lessonDate := ""
 				lessonDatesFrom := ""
 				lessonDatesTo := ""
 				if lessonDatesNode != nil {
@@ -153,22 +155,19 @@ func ParseByXpath(url string) {
 					lessonDates = strings.ReplaceAll(lessonDates, " ", "")
 					lessonDates = strings.ReplaceAll(lessonDates, " ", "")
 					lessonDates = strings.ReplaceAll(lessonDates, "—", "-")
-					lessonDates = strings.ReplaceAll(lessonDates, "(", "")
-					lessonDates = strings.ReplaceAll(lessonDates, ")", "")
-					lessonDates = strings.ReplaceAll(lessonDates, ",", "-")
-					lessonDatesFrom = strings.Split(lessonDates, "-")[0]
-					lessonDatesTo = strings.Split(lessonDates, "-")[1]
+					if strings.ContainsAny(lessonDates, "-") {
+						lessonDates = strings.ReplaceAll(lessonDates, "(", "")
+						lessonDates = strings.ReplaceAll(lessonDates, ")", "")
+						lessonDates = strings.ReplaceAll(lessonDates, ",", "-")
+						lessonDatesFrom = strings.Split(lessonDates, "-")[0]
+						lessonDatesTo = strings.Split(lessonDates, "-")[1]
+					} else {
+						lessonDates = strings.ReplaceAll(lessonDates, "(", "")
+						lessonDates = strings.ReplaceAll(lessonDates, ")", "")
+						lessonDate = lessonDates
+					}
 					//fmt.Println(lessonDates)
 				}
-				//additionalInfoNode := htmlquery.Find(lesson, "./span[@class = 'text-muted']/text()")
-				//additionalInfo := ""
-				//if len(additionalInfoNode) > 0 {
-				//	for _, info := range additionalInfoNode {
-				//		additionalInfo += strings.TrimSpace(info.Data)
-				//	}
-				//	//fmt.Println(additionalInfo)
-				//}
-				// new lessonsData
 				lessonData := LessonData{
 					TimeFrom: lessonTimeFrom,
 					TimeTo:   lessonTimeTo,
@@ -179,16 +178,17 @@ func ParseByXpath(url string) {
 					Groups:   groupsData,
 					Room:     lessonRoom,
 					RoomID:   lessonRoomId,
-					Dates:    "",
+					Dates:    lessonDate,
 					DateFrom: lessonDatesFrom,
 					DateTo:   lessonDatesTo,
 					//Addition: additionalInfo,
 				}
 				// hash lessonData
-				jsonLessonData, err := json.MarshalIndent(lessonData, "", " ")
+				jsonLessonData, err := json.MarshalIndent(lessonData, "", "  ")
 				if err != nil {
 					fmt.Println(err)
 				}
+				fmt.Println(string(jsonLessonData))
 				// hash jsonData
 				hash := sha256.Sum256([]byte(jsonLessonData))
 				hashString := hex.EncodeToString(hash[:])
@@ -209,11 +209,7 @@ func ParseByXpath(url string) {
 			daysHash[dayName] = hashString
 		}
 	}
-	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
-	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
-	//put data to json file
-	// fill daysHash with
-	jsonData, err := json.MarshalIndent(newTerms, "", " ")
+	jsonData, err := json.MarshalIndent(newTerms[semesterId], "", " ")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -221,7 +217,11 @@ func ParseByXpath(url string) {
 	hash := sha256.Sum256([]byte(jsonData))
 	hashString := hex.EncodeToString(hash[:])
 	fmt.Println(hashString)
-	//fmt.Println(lessonsHash)
-	//fmt.Println(daysHash)
-	println(string(jsonData))
+	fmt.Println(lessonsHash)
+	fmt.Println(daysHash)
+	//println(string(jsonData))
+	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["402882"].Time)
+	//fmt.Println(newTerms[departmentId]["days"].(map[string]interface{})["Понедельник"].(map[string]LessonData)["1"])
+	//put data to json file
+	// fill daysHash with
 }

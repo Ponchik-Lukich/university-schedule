@@ -188,7 +188,7 @@ func ParseByXpathExam(url string) {
 		counter++
 	}
 	newTerms[semesterId]["exams"] = examData
-	jsonData, err := json.MarshalIndent(newTerms, "", " ")
+	jsonData, err := json.MarshalIndent(newTerms, "", "  ")
 	if err != nil {
 		fmt.Println(err)
 	}
