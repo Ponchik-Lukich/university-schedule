@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/antchfx/htmlquery"
@@ -11,59 +13,10 @@ import (
 	"strings"
 )
 
-func convertDay(day string) string {
-	switch day {
-	case "Пн":
-		day = "1"
-	case "Вт":
-		day = "2"
-	case "Ср":
-		day = "3"
-	case "Чт":
-		day = "4"
-	case "Пт":
-		day = "5"
-	case "Сб":
-		day = "6"
-	case "Вс":
-		day = "7"
-	}
-	return day
-}
-
-func convertMonth(month string) string {
-	switch month {
-	case "янв":
-		month = "01"
-	case "февр":
-		month = "02"
-	case "марта":
-		month = "03"
-	case "апр":
-		month = "04"
-	case "мая":
-		month = "05"
-	case "июня":
-		month = "06"
-	case "июля":
-		month = "07"
-	case "авг":
-		month = "08"
-	case "сент":
-		month = "09"
-	case "окт":
-		month = "10"
-	case "нояб":
-		month = "11"
-	case "дек":
-		month = "12"
-	}
-	return month
-}
-
 func ParseByXpathExam(url string) {
 	newTerms := make(map[string]map[string]interface{})
 	examData := make(map[string]LessonData)
+	examsHash := make(map[string]string)
 	resp, err := http.Get(url)
 	if err != nil {
 		panic(err)
@@ -103,7 +56,7 @@ func ParseByXpathExam(url string) {
 		//fmt.Println(lessonTimeFrom, lessonTimeTo)
 
 		lessonDateTime := strings.TrimSpace(lessonDateTimeNode.FirstChild.Data)
-		weekDay := convertDay(strings.Split(lessonDateTime, ",")[0])
+		weekDay := ConvertDay(strings.Split(lessonDateTime, ",")[0])
 		//fmt.Println(weekDay)
 		lessonDate := strings.Split(lessonDateTime, ",")[1]
 		lessonDate = strings.Split(lessonDate, ".")[0]
@@ -111,7 +64,7 @@ func ParseByXpathExam(url string) {
 		re := regexp.MustCompile(`(\d{2}\s+)([а-яА-Я]+)`)
 		lessonDateParts := re.FindStringSubmatch(lessonDate)
 		// convert month to number
-		month := convertMonth(lessonDateParts[2])
+		month := ConvertMonth(lessonDateParts[2])
 		lessonDate = strings.TrimSpace(lessonDateParts[1]) + "." + month
 		//fmt.Println(lessonDate)
 
@@ -181,17 +134,76 @@ func ParseByXpathExam(url string) {
 			Dates:    lessonDate,
 			DateFrom: "",
 			DateTo:   "",
-			//Addition: "",
 		}
-		// convert counter to string
+		jsonLessonData, err := json.MarshalIndent(lessonData, "", "  ")
+		if err != nil {
+			fmt.Println(err)
+		}
+		//fmt.Println(string(jsonLessonData))
+		hash := sha256.Sum256([]byte(jsonLessonData))
+		hashString := hex.EncodeToString(hash[:])
+		examsHash[strconv.Itoa(counter)] = hashString
 		examData[strconv.Itoa(counter)] = lessonData
 		counter++
 	}
 	newTerms[semesterId]["exams"] = examData
-	jsonData, err := json.MarshalIndent(newTerms, "", "  ")
+	jsonData, err := json.MarshalIndent(newTerms[semesterId], "", "  ")
 	if err != nil {
 		fmt.Println(err)
 	}
 	println(string(jsonData))
+	hash := sha256.Sum256([]byte(jsonData))
+	hashString := hex.EncodeToString(hash[:])
+	fmt.Println(hashString)
+	fmt.Println(examsHash)
+}
 
+func ConvertDay(day string) string {
+	switch day {
+	case "Пн":
+		day = "1"
+	case "Вт":
+		day = "2"
+	case "Ср":
+		day = "3"
+	case "Чт":
+		day = "4"
+	case "Пт":
+		day = "5"
+	case "Сб":
+		day = "6"
+	case "Вс":
+		day = "7"
+	}
+	return day
+}
+
+func ConvertMonth(month string) string {
+	switch month {
+	case "янв":
+		month = "01"
+	case "февр":
+		month = "02"
+	case "марта":
+		month = "03"
+	case "апр":
+		month = "04"
+	case "мая":
+		month = "05"
+	case "июня":
+		month = "06"
+	case "июля":
+		month = "07"
+	case "авг":
+		month = "08"
+	case "сент":
+		month = "09"
+	case "окт":
+		month = "10"
+	case "нояб":
+		month = "11"
+	case "дек":
+		month = "12"
+	}
+	return month
 }

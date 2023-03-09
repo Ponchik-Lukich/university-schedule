@@ -188,7 +188,7 @@ func ParseByXpath(url string) {
 				if err != nil {
 					fmt.Println(err)
 				}
-				fmt.Println(string(jsonLessonData))
+				//fmt.Println(string(jsonLessonData))
 				// hash jsonData
 				hash := sha256.Sum256([]byte(jsonLessonData))
 				hashString := hex.EncodeToString(hash[:])
@@ -213,7 +213,7 @@ func ParseByXpath(url string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	// hash jsonData
+	fmt.Println(string(jsonData))
 	hash := sha256.Sum256([]byte(jsonData))
 	hashString := hex.EncodeToString(hash[:])
 	fmt.Println(hashString)
