@@ -114,6 +114,7 @@ func ParseByXpathExam(url string) {
 		tutorsData := make(map[string]string)
 		for _, tutor := range tutors {
 			tutorName := strings.TrimSpace(tutor.FirstChild.Data)
+			tutorName = strings.ReplaceAll(tutorName, " ", " ")
 			tutorId := htmlquery.SelectAttr(tutor, "href")
 			tutorId = strings.ReplaceAll(tutorId, "/tutors/", "")
 			tutorId = strings.ReplaceAll(tutorId, "/exams", "")
@@ -139,7 +140,8 @@ func ParseByXpathExam(url string) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		//fmt.Println(string(jsonLessonData))
+		fmt.Printf("JSON value:\n%s\n", string(jsonLessonData))
+		fmt.Printf("Hash: %x\n", sha256.Sum256(jsonLessonData))
 		hash := sha256.Sum256([]byte(jsonLessonData))
 		hashString := hex.EncodeToString(hash[:])
 		examsHash[strconv.Itoa(counter)] = hashString

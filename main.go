@@ -47,8 +47,33 @@ var classes = []string{
 var wg sync.WaitGroup
 
 func main() {
-	//connect()
+	//var cfg Config
+	//cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
+	//cfg.Database, _ = os.LookupEnv("DATABASE")
+	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	//defer cancel()
+	//db, err := ydb.Open(ctx,
+	//	sugar.DSN(cfg.Endpoint, cfg.Database, true),
+	//	yc.WithInternalCA(),
+	//	yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
+	//)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	panic(err)
+	//}
+	//Links, err = getDepartmentLinks(ctx, db)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	panic(err)
+	//}
+	//for _, link := range Links {
+	//	fmt.Println(link)
+	//}
 	//
+	//defer func() {
+	//	_ = db.Close(ctx)
+	//}()
+
 	//hash.GetDepartmentsHash()
 	//hash.GetExamsHash()
 	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")

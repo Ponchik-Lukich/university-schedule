@@ -5,12 +5,8 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/ydb-platform/ydb-go-sdk/v3"
-	"github.com/ydb-platform/ydb-go-sdk/v3/sugar"
 	"github.com/ydb-platform/ydb-go-sdk/v3/table"
-	yc "github.com/ydb-platform/ydb-go-yc"
 	"log"
-	"os"
-	"time"
 )
 
 type DepartmentLink struct {
@@ -62,35 +58,3 @@ func getDepartmentLinks(ctx context.Context, db ydb.Connection) ([]string, error
 //func getLessonsData(ctx context.Context, db ydb.Connection, departmentLink int) ([]string, error) {
 //
 //}
-
-func connect() {
-	var cfg Config
-	cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
-	cfg.Database, _ = os.LookupEnv("DATABASE")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	db, err := ydb.Open(ctx,
-		sugar.DSN(cfg.Endpoint, cfg.Database, true),
-		yc.WithInternalCA(),
-		yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
-	)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-
-	Links, err = getDepartmentLinks(ctx, db)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-	fmt.Println(len(Links))
-
-	for _, link := range Links {
-		fmt.Println(link)
-	}
-
-	defer func() {
-		_ = db.Close(ctx)
-	}()
-}

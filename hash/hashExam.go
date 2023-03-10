@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"university-timetable/parser"
 )
@@ -33,19 +34,20 @@ func GetExamsHash() {
 		newTerms[semester] = make(map[string]interface{})
 		newTerms[semester]["exams"] = make(map[string]interface{})
 		for departmentLink, nestedValue := range nestedMap {
+			counter := 1
 			if departmentLink != "2603786" {
 				continue
 			}
 			newTerms[semester][departmentLink] = nestedValue.Name
-			jsonValue, err := json.MarshalIndent(nestedValue, "", "  ")
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("Department link: %s\n", departmentLink)
-			fmt.Printf("JSON value:\n%s\n", string(jsonValue))
-			fmt.Printf("Hash: %x\n", sha256.Sum256(jsonValue))
+			//jsonValue, err := json.MarshalIndent(nestedValue, "", "  ")
+			//if err != nil {
+			//	panic(err)
+			//}
+			//fmt.Printf("Department link: %s\n", departmentLink)
+			//fmt.Printf("JSON value:\n%s\n", string(jsonValue))
+			//fmt.Printf("Hash: %x\n", sha256.Sum256(jsonValue))
 
-			for lessonName, lesson := range nestedValue.Exams {
+			for _, lesson := range nestedValue.Exams {
 				lessonStruct := parser.LessonData{}
 				timeStruct := Time{}
 				lessonBytes, err := json.Marshal(lesson)
@@ -99,20 +101,17 @@ func GetExamsHash() {
 				if err != nil {
 					fmt.Println(err)
 				}
-				fmt.Println(string(jsonLessonData))
+				//fmt.Println(string(jsonLessonData))
 				// hash jsonData
 				hash := sha256.Sum256([]byte(jsonLessonData))
 				hashString := hex.EncodeToString(hash[:])
 				// add to examsHash
-				examsHash[lessonName] = hashString
+				examsHash[strconv.Itoa(counter)] = hashString
 				// print lesson as json
-				//jsonValue, err := json.MarshalIndent(lessonStruct, "", "  ")
-				//if err != nil {
-				//	panic(err)
-				//}
-				//fmt.Printf("JSON value:\n%s\n", string(jsonValue))
-				//fmt.Printf("Hash: %x\n", sha256.Sum256(jsonValue))
-				// create the original json from lesson struct
+				newTerms[semester]["exams"].(map[string]interface{})[strconv.Itoa(counter)] = lessonStruct
+				counter++
+				fmt.Printf("JSON value:\n%s\n", string(jsonLessonData))
+				fmt.Printf("Hash: %x\n", sha256.Sum256(jsonLessonData))
 
 			}
 			//jsonData, err := json.MarshalIndent(newTerms[semester], "", " ")
@@ -126,15 +125,15 @@ func GetExamsHash() {
 			//println(string(jsonData))
 		}
 	}
-	jsonData, err := json.MarshalIndent(newTerms, "", " ")
+	jsonData, err := json.MarshalIndent(newTerms["16"], "", " ")
 	if err != nil {
 		fmt.Println(err)
 	}
+	println(string(jsonData))
 	// hash jsonData
 	hash := sha256.Sum256([]byte(jsonData))
 	hashString := hex.EncodeToString(hash[:])
 	fmt.Println(hashString)
-	//println(string(jsonData))
 	fmt.Println(examsHash)
 	//fmt.Println(daysHash)
 }
