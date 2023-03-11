@@ -126,7 +126,8 @@ func ParseByXpathExam(url string) {
 			TimeFrom: lessonTimeFrom,
 			TimeTo:   lessonTimeTo,
 			Type:     lessonType,
-			Week:     weekDay,
+			Week:     "",
+			WeekDay:  weekDay,
 			Name:     lessonName,
 			Tutors:   tutorsData,
 			Groups:   groupsData,
@@ -175,6 +176,20 @@ func ConvertDay(day string) string {
 	case "Сб":
 		day = "6"
 	case "Вс":
+		day = "7"
+	case "Понедельник":
+		day = "1"
+	case "Вторник":
+		day = "2"
+	case "Среда":
+		day = "3"
+	case "Четверг":
+		day = "4"
+	case "Пятница":
+		day = "5"
+	case "Суббота":
+		day = "6"
+	case "Воскресенье":
 		day = "7"
 	}
 	return day

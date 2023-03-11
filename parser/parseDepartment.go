@@ -22,6 +22,7 @@ type LessonData struct {
 	TimeTo   string            `json:"time_to"`
 	Type     string            `json:"type"`
 	Week     string            `json:"week"`
+	WeekDay  string            `json:"week_day"`
 	Name     string            `json:"name"`
 	Tutors   map[string]string `json:"tutors"`
 	Groups   map[string]string `json:"groups"`
@@ -172,6 +173,7 @@ func ParseByXpath(url string) {
 					TimeTo:   lessonTimeTo,
 					Type:     lessonType,
 					Week:     lessonWeek,
+					WeekDay:  ConvertDay(dayName),
 					Name:     lessonName,
 					Tutors:   tutorsData,
 					Groups:   groupsData,

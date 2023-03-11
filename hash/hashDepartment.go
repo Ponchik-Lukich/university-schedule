@@ -103,6 +103,8 @@ func GetDepartmentsHash() {
 					lessonStruct.DateFrom = lessonDatesFrom
 					lessonStruct.DateTo = lessonDatesTo
 					lessonStruct.Dates = lessonDate
+					//lessonStruct.Week = parser.ConvertDay(day)
+					lessonStruct.WeekDay = parser.ConvertDay(day)
 
 					lessonTime := timeStruct.Time
 					lessonTime = strings.TrimSpace(lessonTime)

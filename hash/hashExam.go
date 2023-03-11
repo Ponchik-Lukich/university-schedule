@@ -70,7 +70,7 @@ func GetExamsHash() {
 				lessonDatesFrom := ""
 				lessonDatesTo := ""
 				weekDay := parser.ConvertDay(strings.Split(lessonDate, ",")[0])
-				lessonStruct.Week = weekDay
+				lessonStruct.WeekDay = weekDay
 				//fmt.Println(weekDay)
 				lessonDate = strings.Split(lessonDate, ",")[1]
 				lessonDate = strings.Split(lessonDate, ".")[0]
