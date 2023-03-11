@@ -123,7 +123,7 @@ func GetDepartmentsHash() {
 					hash := sha256.Sum256([]byte(jsonLessonData))
 					hashString := hex.EncodeToString(hash[:])
 					// add to lessonsHash
-					lessonsHash[lessonName] = hashString
+					lessonsHash[hashString] = lessonName
 					dayData[lessonName] = lessonStruct
 
 					// print lesson as json
@@ -145,7 +145,7 @@ func GetDepartmentsHash() {
 				hash := sha256.Sum256([]byte(jsondayData))
 				hashString := hex.EncodeToString(hash[:])
 				// add to daysHash
-				daysHash[day] = hashString
+				daysHash[hashString] = day
 			}
 			jsonData, err := json.MarshalIndent(newTerms[semester], "", " ")
 			if err != nil {

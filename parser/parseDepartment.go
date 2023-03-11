@@ -30,7 +30,6 @@ type LessonData struct {
 	DateFrom string            `json:"date_from"`
 	DateTo   string            `json:"date_to"`
 	Dates    string            `json:"dates"`
-	//Addition string            `json:"additional_info"`
 }
 
 func ParseByXpath(url string) {
