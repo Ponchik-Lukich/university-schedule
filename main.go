@@ -1,18 +1,23 @@
 package main
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/ydb-platform/ydb-go-sdk/v3"
+	"github.com/ydb-platform/ydb-go-sdk/v3/sugar"
+	yc "github.com/ydb-platform/ydb-go-yc"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
-	"university-timetable/hash"
+	"university-timetable/parser"
 )
 
 var websites = []string{
@@ -47,29 +52,29 @@ var classes = []string{
 var wg sync.WaitGroup
 
 func main() {
-	//var cfg Config
-	//cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
-	//cfg.Database, _ = os.LookupEnv("DATABASE")
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	//defer cancel()
-	//db, err := ydb.Open(ctx,
-	//	sugar.DSN(cfg.Endpoint, cfg.Database, true),
-	//	yc.WithInternalCA(),
-	//	yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
-	//)
+	var cfg Config
+	cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
+	cfg.Database, _ = os.LookupEnv("DATABASE")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	db, err := ydb.Open(ctx,
+		sugar.DSN(cfg.Endpoint, cfg.Database, true),
+		yc.WithInternalCA(),
+		yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
+	)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	//Links, err = getDepartmentLinks(ctx, db, 16)
 	//if err != nil {
 	//	fmt.Println(err)
 	//	panic(err)
 	//}
-	////Links, err = getDepartmentLinks(ctx, db, 16)
-	////if err != nil {
-	////	fmt.Println(err)
-	////	panic(err)
-	////}
-	////for _, link := range Links {
-	////	fmt.Println(link)
-	////}
-	//
+	//for _, link := range Links {
+	//	fmt.Println(link)
+	//}
+
 	//LessonsData, err := getLessonsData(ctx, db, 2603786)
 	//if err != nil {
 	//	fmt.Println(err)
@@ -78,16 +83,22 @@ func main() {
 	//for _, lesson := range LessonsData {
 	//	fmt.Println(lesson)
 	//}
-	//
-	//defer func() {
-	//	_ = db.Close(ctx)
-	//}()
+
+	RoomsData, err := getRooms(ctx, db)
+	for _, room := range RoomsData {
+		fmt.Println(room)
+	}
+
+	defer func() {
+		_ = db.Close(ctx)
+	}()
 
 	//hash.GetDepartmentsHash()
-	hash.GetExamsHash()
+	//hash.GetExamsHash()
 	//hash.CompareMaps()
 	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
 	//parser.ParseByXpathExam("https://home.potatohd.ru/departments/2603786/exams")
+	parser.ParseRoomByXpath("https://home.mephi.ru/rooms/4711947")
 
 	//for i, url := range websites {
 	//	wg.Add(1)

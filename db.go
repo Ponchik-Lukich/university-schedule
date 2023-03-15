@@ -20,6 +20,11 @@ type Config struct {
 	Database string
 }
 
+type Room struct {
+	Id   int
+	Name string
+}
+
 var Links []string
 
 func init() {
@@ -55,6 +60,39 @@ func getDepartmentLinks(ctx context.Context, db ydb.Connection, semester int) ([
 		return nil, err
 	}
 	return departmentLinks, nil
+}
+
+func getRooms(ctx context.Context, db ydb.Connection) ([]string, error) {
+	var rooms []string
+	err := db.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
+		query := `SELECT id FROM rooms;`
+		_, res, err := s.Execute(ctx, table.DefaultTxControl(), query, table.NewQueryParameters())
+		//cnt := res.ResultSetCount()
+		//fmt.Println(cnt)
+		cnt := 0
+		if err != nil {
+			return err
+		}
+		for res.NextResultSet(ctx) {
+			for res.NextRow() {
+				cnt++
+				room := &ID{}
+				err := res.ScanWithDefaults(
+					&room.Id,
+				)
+				if err != nil {
+					return err
+				}
+				rooms = append(rooms, fmt.Sprintf("%d", room.Id))
+			}
+		}
+		fmt.Println(cnt)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rooms, nil
 }
 
 func getLessonsData(ctx context.Context, db ydb.Connection, departmentLink int) (map[string]parser.LessonData, error) {
