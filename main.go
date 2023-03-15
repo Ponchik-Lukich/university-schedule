@@ -1,22 +1,11 @@
 package main
 
 import (
-	"context"
-	"crypto/sha1"
-	"encoding/base64"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/ydb-platform/ydb-go-sdk/v3"
-	"github.com/ydb-platform/ydb-go-sdk/v3/sugar"
-	yc "github.com/ydb-platform/ydb-go-yc"
-	"io"
-	"net/http"
-	"os"
-	"regexp"
-	"strings"
+	"io/ioutil"
+	"strconv"
 	"sync"
-	"time"
 	"university-timetable/parser"
 )
 
@@ -52,20 +41,20 @@ var classes = []string{
 var wg sync.WaitGroup
 
 func main() {
-	var cfg Config
-	cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
-	cfg.Database, _ = os.LookupEnv("DATABASE")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	db, err := ydb.Open(ctx,
-		sugar.DSN(cfg.Endpoint, cfg.Database, true),
-		yc.WithInternalCA(),
-		yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
-	)
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
+	//var cfg Config
+	//cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
+	//cfg.Database, _ = os.LookupEnv("DATABASE")
+	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	//defer cancel()
+	//db, err := ydb.Open(ctx,
+	//	sugar.DSN(cfg.Endpoint, cfg.Database, true),
+	//	yc.WithInternalCA(),
+	//	yc.WithServiceAccountKeyFileCredentials("./ydb/authorized_key.json"),
+	//)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	panic(err)
+	//}
 	//Links, err = getDepartmentLinks(ctx, db, 16)
 	//if err != nil {
 	//	fmt.Println(err)
@@ -84,21 +73,48 @@ func main() {
 	//	fmt.Println(lesson)
 	//}
 
-	RoomsData, err := getRooms(ctx, db)
-	for _, room := range RoomsData {
-		fmt.Println(room)
-	}
-
-	defer func() {
-		_ = db.Close(ctx)
-	}()
+	//RoomsData, err := getRooms(ctx, db)
+	//for _, room := range RoomsData {
+	//	fmt.Println(room)
+	//}
+	//
+	//defer func() {
+	//	_ = db.Close(ctx)
+	//}()
 
 	//hash.GetDepartmentsHash()
 	//hash.GetExamsHash()
 	//hash.CompareMaps()
 	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
 	//parser.ParseByXpathExam("https://home.potatohd.ru/departments/2603786/exams")
-	parser.ParseRoomByXpath("https://home.mephi.ru/rooms/4711947")
+	//parser.ParseRoomByXpath("https://home.mephi.ru/rooms/4711947")
+	newTerms := make(map[int][]string)
+	rooms := parser.ParseRoomsJson()
+	counter := 0
+	fmt.Println(len(rooms))
+	for _, element := range rooms {
+		roomData := parser.ParseRoomByXpath("https://home.mephi.ru/rooms/" + strconv.Itoa(element))
+		counter++
+		if roomData == nil {
+			newTerms[element] = []string{""}
+		} else {
+			newTerms[element] = roomData
+		}
+		fmt.Println(counter)
+		if counter%300 == 0 {
+			jsonData, err := json.MarshalIndent(newTerms, "", " ")
+			if err != nil {
+				fmt.Println(err)
+			}
+			_ = ioutil.WriteFile("output.json", jsonData, 0644)
+			fmt.Printf("Parsed %d rooms\n", counter)
+		}
+	}
+	jsonData, err := json.MarshalIndent(newTerms, "", " ")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_ = ioutil.WriteFile("output.json", jsonData, 0644)
 
 	//for i, url := range websites {
 	//	wg.Add(1)
@@ -130,125 +146,4 @@ func main() {
 	//	}(i, url)
 	//}
 	//wg.Wait()
-}
-
-func parseData(data string) (string, error) {
-	re := regexp.MustCompile(`\n\n+`)
-	data = re.ReplaceAllString(data, "\n")
-	lines := strings.Split(data, "\n")
-	var index int
-out:
-	for i, line := range lines {
-		for _, day := range weekDays {
-			if strings.HasPrefix(line, day) {
-				index = i
-				break out
-			}
-		}
-	}
-	lines = lines[index:]
-	lines = lines[:len(lines)-3]
-	data = strings.Join(lines, "\n")
-	fmt.Println(data)
-	return data, nil
-
-}
-
-func getWebsiteHash(data string) (string, error) {
-	hasher := sha1.New()
-	_, err := hasher.Write([]byte(data))
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil)), nil
-}
-
-func getWebsiteData(url string) (string, error) {
-	method := "GET"
-
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	req, err := http.NewRequest(method, url, nil)
-
-	if err != nil {
-		return "", err
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic("Error closing body. Here's why: " + err.Error())
-		}
-	}(res.Body)
-	if res.Status != "200 OK" {
-		return "", errors.New("status code is not 200")
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
-}
-
-func removeJunk(data *goquery.Selection, choice int) {
-	class, _ := data.Attr("class")
-	for _, c := range classes {
-		if class == c || choice == 1 {
-			if class == "text-nowrap" {
-				link := data.Find("a[href*='/tutors/']")
-				if link.Length() > 0 {
-					linkText := link.AttrOr("href", "")
-					splitLink := strings.Split(linkText, "/tutors/")
-					if len(splitLink) > 1 {
-						data.SetText(splitLink[1])
-						return
-					}
-				}
-			} else if choice == 1 {
-				if class == "lesson lesson-practice" || class == "lesson lesson-lecture" || class == "lesson lesson-lab" {
-					dataID, exists := data.Attr("data-id")
-					if exists {
-						data.SetText(dataID)
-						return
-					}
-				}
-			} else {
-				data.SetText(class)
-				return
-			}
-		}
-	}
-	data = data.RemoveAttr("class")
-	data = data.RemoveAttr("id")
-	data.Contents().Each(func(i int, s *goquery.Selection) {
-		if s.Is("script") {
-			s.Remove()
-		} else if s.Is("style") {
-			s.Remove()
-		} else {
-			removeJunk(s, choice)
-		}
-	})
-}
-
-func setText(data *goquery.Selection, text string) {
-	if data.Length() > 0 {
-		content := data.Contents().Text()
-		if len(content) > 0 {
-			data.SetHtml(content + text)
-		} else {
-			data.SetText(text)
-		}
-	}
-}
-
-func getXpathData(body *goquery.Selection, xpath string) *goquery.Selection {
-	xpath = strings.ReplaceAll(xpath, "/html/body", "")
-
-	return body.Find(xpath)
 }

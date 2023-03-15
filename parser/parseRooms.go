@@ -1,13 +1,19 @@
 package parser
 
 import (
+	"encoding/json"
 	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html"
+	"io/ioutil"
+	"log"
 	"net/http"
-	"strings"
 )
 
-func ParseRoomByXpath(url string) map[string][]string {
+type RoomId struct {
+	Id int
+}
+
+func ParseRoomByXpath(url string) []string {
 	//newTerms := make(map[string]interface{})
 	var tags []string
 
@@ -21,13 +27,27 @@ func ParseRoomByXpath(url string) map[string][]string {
 	if err != nil {
 		// handle error
 	}
-	roomId := strings.ReplaceAll(url, "https://home.mephi.ru/rooms/", "")
 	tagsNode := htmlquery.Find(doc, "/html/body/div/div/div/div[3]/h1/span/i")
 	for _, node := range tagsNode {
 		tag := node.Attr[0].Val
 		tags = append(tags, tag)
 	}
-	roomData := make(map[string][]string)
-	roomData[roomId] = tags
-	return roomData
+	return tags
+}
+
+func ParseRoomsJson() []int {
+	data, err := ioutil.ReadFile("./ydb/sources/parsed/mephi_public_rooms.json")
+	var roomIds []int
+	var parsedData []RoomId
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal([]byte(data), &parsedData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, room := range parsedData {
+		roomIds = append(roomIds, room.Id)
+	}
+	return roomIds
 }
