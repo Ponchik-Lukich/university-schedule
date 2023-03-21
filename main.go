@@ -1,10 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"strconv"
 	"sync"
 	"university-timetable/parser"
 )
@@ -41,6 +37,7 @@ var classes = []string{
 var wg sync.WaitGroup
 
 func main() {
+	parser.CreateInserts()
 	//var cfg Config
 	//cfg.Endpoint, _ = os.LookupEnv("ENDPOINT")
 	//cfg.Database, _ = os.LookupEnv("DATABASE")
@@ -88,33 +85,6 @@ func main() {
 	//parser.ParseByXpath("https://home.potatohd.ru/departments/2603786")
 	//parser.ParseByXpathExam("https://home.potatohd.ru/departments/2603786/exams")
 	//parser.ParseRoomByXpath("https://home.mephi.ru/rooms/4711947")
-	newTerms := make(map[int][]string)
-	rooms := parser.ParseRoomsJson()
-	counter := 0
-	fmt.Println(len(rooms))
-	for _, element := range rooms {
-		roomData := parser.ParseRoomByXpath("https://home.mephi.ru/rooms/" + strconv.Itoa(element))
-		counter++
-		if roomData == nil {
-			newTerms[element] = []string{""}
-		} else {
-			newTerms[element] = roomData
-		}
-		fmt.Println(counter)
-		if counter%300 == 0 {
-			jsonData, err := json.MarshalIndent(newTerms, "", " ")
-			if err != nil {
-				fmt.Println(err)
-			}
-			_ = ioutil.WriteFile("output.json", jsonData, 0644)
-			fmt.Printf("Parsed %d rooms\n", counter)
-		}
-	}
-	jsonData, err := json.MarshalIndent(newTerms, "", " ")
-	if err != nil {
-		fmt.Println(err)
-	}
-	_ = ioutil.WriteFile("output.json", jsonData, 0644)
 
 	//for i, url := range websites {
 	//	wg.Add(1)
