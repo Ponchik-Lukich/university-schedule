@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type RoomId struct {
@@ -103,8 +105,43 @@ func CreateInserts() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	counter := 0
 	for key, value := range parsedData {
-		// split value by " "
-		//fmt.Printf("INSERT INTO rooms (id, lab, projector, computer, availability, dot, temporary) VALUES (%d, %t, %t, %t, %t, %t, %t);\n", key, value[0] == "lab", value[0] == "projector", value[0] == "computer", value[0] == "availability", value[0] == "dot", value[0] == "temporary")
+		var lab, projector, computer, availability, dot, temporary bool
+		for _, str := range value {
+			if strings.Contains(str, "Лаборатория") {
+				lab = true
+			}
+			if strings.Contains(str, "Аудитория оборудована проектором") {
+				projector = true
+			}
+			if strings.Contains(str, "Компьютерный класс") {
+				computer = true
+			}
+			if strings.Contains(str, "Аудитория общего фонда") {
+				availability = true
+				counter++
+			}
+			if strings.Contains(str, "Проводится с использованием дистанционных образовательных технологий") {
+				dot = true
+			}
+			if strings.Contains(str, "Выездная аудитория") {
+				temporary = true
+			}
+		}
+		f, err := os.OpenFile("./ydb/sources/parsed/insert_rooms.sql", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			panic(err)
+		}
+
+		defer f.Close()
+
+		if _, err = f.WriteString(fmt.Sprintf("UPDATE rooms SET (lab, projector, computer, availability, dot, temporary)="+
+			"(%t, %t, %t, %t, %t, %t) WHERE id=%d;\n", lab, projector, computer, availability, dot, temporary, key)); err != nil {
+			panic(err)
+		}
+		//_ = ioutil.WriteFile("./ydb/sources/parsed/insert_rooms.sql", []byte(fmt.Sprintf("UPDATE rooms SET (lab, projector, computer, availability, dot, temporary)="+
+		//	"(%t, %t, %t, %t, %t, %t) WHERE id=%d;\n", lab, projector, computer, availability, dot, temporary, key)), 0644)
 	}
+	println(counter)
 }

@@ -5,35 +5,6 @@ import (
 	"university-timetable/parser"
 )
 
-var websites = []string{
-	"https://home.potatohd.ru/departments/2603786",
-}
-
-var prevContent = []string{
-	"",
-}
-
-var prevXpath = []string{
-	"",
-}
-
-var weekDays = []string{
-	"Понедельник",
-	"Вторник",
-	"Среда",
-	"Четверг",
-	"Пятница",
-	"Суббота",
-	"Воскресенье",
-}
-
-var classes = []string{
-	"text-nowrap",
-	"lesson-square lesson-square-0",
-	"lesson-square lesson-square-1",
-	"lesson-square lesson-square-2",
-}
-
 var wg sync.WaitGroup
 
 func main() {
